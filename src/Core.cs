@@ -21,6 +21,23 @@ namespace ReFix {
  public class LocalState { public string version = "Не определена"; public string patchHash = ""; public List<ActiveAddon> addons = new List<ActiveAddon>(); }
  public class Change { public string path; public string backup; }
  public class Journal { public string status = "pending"; public List<Change> changes = new List<Change>(); }
+ public static class OperationLog {
+  static readonly object gate=new object();
+  public static void Write(string root,string stage,string detail="") {
+   lock(gate) {
+    string path=Data.Safe(root,".refix-launcher/operations.log");Directory.CreateDirectory(Path.GetDirectoryName(path));
+    byte[] data=Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("o")+" | "+stage+" | "+detail.Replace("\r"," ").Replace("\n"," ")+"\r\n");
+    using(var f=new FileStream(path,FileMode.Append,FileAccess.Write,FileShare.Read)){f.Write(data,0,data.Length);f.Flush(true);}
+   }
+  }
+ }
+ public class PreparedPatch {
+  public string Archive {get;internal set;}
+  public string Hash {get;internal set;}
+  public string Version {get;internal set;}
+  public string Root {get;internal set;}
+  public string[] Changes {get;internal set;}
+ }
 
  public static class Data {
   public static readonly Encoding Legacy = Encoding.GetEncoding(1251);
@@ -61,7 +78,7 @@ namespace ReFix {
    if(File.Exists(path)) { change.backup="before/"+journal.changes.Count; string b=Data.Safe(folder,change.backup);Directory.CreateDirectory(Path.GetDirectoryName(b));File.Copy(path,b); }
    journal.changes.Add(change); Save();
   }
-  public void Put(string relative, byte[] data) { Remember(relative); Data.Atomic(Data.Safe(root,relative),data); }
+  public void Put(string relative, byte[] data) { Remember(relative); OperationLog.Write(root,"FILE_WRITE_BEGIN",relative); Data.Atomic(Data.Safe(root,relative),data); OperationLog.Write(root,"FILE_WRITE_END",relative); }
   public void Remove(string relative) {
    Remember(relative); string path=Data.Safe(root,relative);
    if(File.Exists(path)) { string dest=Path.Combine(folder,"removed",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(Path.GetDirectoryName(dest));File.Move(path,dest); }
@@ -69,12 +86,14 @@ namespace ReFix {
   public void Commit() { journal.status="committed"; Save(); }
   public void Dispose() { if(journal.status=="pending") Rollback(root,folder,journal); }
   static void Rollback(string root,string folder,Journal journal) {
+   OperationLog.Write(root,"ROLLBACK_BEGIN",Path.GetFileName(folder));
    foreach(var c in journal.changes.AsEnumerable().Reverse()) {
     string target=Data.Safe(root,c.path);
     if(c.backup!=null) Data.Atomic(target,File.ReadAllBytes(Data.Safe(folder,c.backup)));
     else if(File.Exists(target)) { string dest=Path.Combine(folder,"discarded",Guid.NewGuid().ToString("N"));Directory.CreateDirectory(Path.GetDirectoryName(dest));File.Move(target,dest); }
    }
    journal.status="rolled-back"; Data.WriteJson(Path.Combine(folder,"journal.json"),journal);
+   OperationLog.Write(root,"ROLLBACK_COMPLETE",Path.GetFileName(folder));
   }
   public static void Recover(string root) {
    string dir=Data.Safe(root,".refix-launcher/transactions"); if(!Directory.Exists(dir)) return;
@@ -153,6 +172,7 @@ namespace ReFix {
   public string Root {get;private set;}
   public LocalState State {get;private set;}
   public Action<string> Progress = delegate{};
+  public void Log(string stage,string detail="") {OperationLog.Write(Root,stage,detail);}
   public GameService(string root) {
    Root=Path.GetFullPath(root);
    if(!File.Exists(Data.Safe(Root,"bin/XR_3DA.exe")) || !File.Exists(Data.Safe(Root,"gamedata/config/bz_lord.ltx")) || !File.Exists(Data.Safe(Root,"fsgame.ltx"))) throw new IOException("Выберите корень сборки ReFix: рядом должны быть bin, gamedata и fsgame.ltx.");
@@ -186,8 +206,9 @@ namespace ReFix {
    }
   }
   public async Task<string> Download(Asset asset) {
+   OperationLog.Write(Root,"DOWNLOAD_BEGIN",asset.id);
    ValidateUrl(asset.url); string relative=".refix-launcher/cache/"+asset.sha256+".zip";string path=Data.Safe(Root,relative);
-   if(File.Exists(path) && new FileInfo(path).Length==asset.bytes && Data.HashFile(path)==asset.sha256)return relative;
+   if(File.Exists(path) && new FileInfo(path).Length==asset.bytes && Data.HashFile(path)==asset.sha256){OperationLog.Write(Root,"DOWNLOAD_CACHE_VERIFIED",asset.id);return relative;}
    Directory.CreateDirectory(Path.GetDirectoryName(path)); string part=path+"."+Guid.NewGuid().ToString("N")+".part";
    using(var client=Client()) using(var response=await client.GetAsync(asset.url,HttpCompletionOption.ResponseHeadersRead)) {
     response.EnsureSuccessStatusCode();
@@ -197,8 +218,26 @@ namespace ReFix {
      if(count!=asset.bytes)throw new InvalidDataException("Загрузка не завершена");
     }
    }
+   OperationLog.Write(Root,"DOWNLOAD_RECEIVED",asset.id);
    if(Data.HashFile(part)!=asset.sha256)throw new InvalidDataException("Загруженный архив повреждён. Попробуйте ещё раз.");
-   if(File.Exists(path))File.Move(path,path+".invalid-"+Guid.NewGuid().ToString("N"));File.Move(part,path);return relative;
+   if(File.Exists(path))File.Move(path,path+".invalid-"+Guid.NewGuid().ToString("N"));File.Move(part,path);OperationLog.Write(Root,"DOWNLOAD_VERIFIED",asset.id);return relative;
+  }
+  public PreparedPatch PreparePatch(string archive,string version,string hash) {
+   OperationLog.Write(Root,"PREVIEW_BEGIN",archive);
+   string path=Data.Safe(Root,archive);
+   if(Data.HashFile(path)!=hash)throw new InvalidDataException("Архив изменился. Скачайте обновление заново.");
+   var patch=Package.Load(path,false);
+   var lines=patch.Files.OrderBy(p=>p.Key,StringComparer.OrdinalIgnoreCase).Select(p=>
+    (File.Exists(Data.Safe(Root,p.Key))?(Data.HashFile(Data.Safe(Root,p.Key))==Data.Hash(p.Value)?"Без изменений: ":"Заменить: "):"Добавить: ")+p.Key).ToList();
+   foreach(var a in State.addons)lines.Add("Снять и повторно установить дополнение: "+a.id);
+   OperationLog.Write(Root,"PREVIEW_READY",patch.Files.Count.ToString());
+   return new PreparedPatch {Root=Root,Archive=archive,Version=version,Hash=hash,Changes=lines.ToArray()};
+  }
+  public void InstallPreparedPatch(PreparedPatch prepared) {
+   if(prepared==null || prepared.Root!=Root)throw new InvalidOperationException("Сначала скачайте и проверьте обновление для этой папки игры.");
+   EnsureStopped();OperationLog.Write(Root,"INSTALL_REVALIDATE",prepared.Archive);
+   if(Data.HashFile(Data.Safe(Root,prepared.Archive))!=prepared.Hash)throw new InvalidDataException("Архив изменился после просмотра. Скачайте обновление заново.");
+   ApplyPatch(prepared.Archive,prepared.Version,prepared.Hash);
   }
   void Restore(ActiveAddon addon,Transaction tx) {
    foreach(var item in addon.originals) {if(item.Value==null)tx.Remove(item.Key);else tx.Put(item.Key,File.ReadAllBytes(Data.Safe(Root,item.Value)));}
@@ -212,6 +251,7 @@ namespace ReFix {
    }return active;
   }
   public void ApplyPatch(string archive,string version,string hash) {
+   OperationLog.Write(Root,"INSTALL_BEGIN",version);
    EnsureStopped();var patch=Package.Load(Data.Safe(Root,archive),false);
    var layers=State.addons.Select(a=>new {a.id,a.archive,package=Package.Load(Data.Safe(Root,a.archive),true)}).ToList();
    using(var tx=new Transaction(Root)) {
@@ -221,6 +261,7 @@ namespace ReFix {
     foreach(var a in layers) next.addons.Add(Activate(a.id,a.archive,a.package,tx));
     tx.Put(".refix-launcher/state.json",Encoding.UTF8.GetBytes(Data.Json(next)));tx.Commit();State=next;
    }
+   OperationLog.Write(Root,"INSTALL_COMPLETE",version);
   }
   public void ApplyAddons(Dictionary<string,string> selected) {
    EnsureStopped();var packages=selected.ToDictionary(p=>p.Key,p=>Package.Load(Data.Safe(Root,p.Value),true));
