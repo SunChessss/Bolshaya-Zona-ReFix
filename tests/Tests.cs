@@ -72,6 +72,20 @@ class Tests {
   Reject(()=>game.SaveSettings(graphics,100,50,1),"reject inconsistent weight");
   string unknown="bind foo bar\r\nrenderer renderer_r1\r\ncustom 9\r\n";string updated=Config.Set(unknown,"renderer","renderer_r2");
   Check(updated.Contains("bind foo bar")&&updated.Contains("custom 9"),"preserve unrelated settings");
+  var known=new System.Collections.Generic.List<InstallProfile>{new InstallProfile{title="Known release",version="test",patchHash="verified",files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}}};
+  var detected=Installation.Verify(game,known);Check(detected.PatchHash=="verified","detect installed files independently of recorded version");
+  Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("changed"));
+  Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
+  known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
+  Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
+  Check(Installation.Profiles().Count==2 && Installation.Profiles()[0].files.Count==50,"embedded current and pre-patch profiles available offline");
+  string font="; исходный шрифт\r\n[ui_font_letterica16_russian]\r\ntexture = ui\\ui_font_letter_16_1024\r\n";
+  Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font));
+  foreach(string n in new[]{"16","18","25"})foreach(string ext in new[]{"dds","ini"})Data.Atomic(Data.Safe(root,"gamedata/textures/ui/ui_font_letter_"+n+"_1024."+ext),new byte[]{0});
+  GameFonts.Save(game,"large");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_18_1024"),"large preset uses native larger font atlas");
+  GameFonts.Save(game,"largest");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25_1024"),"largest preset uses original base without cumulative substitutions");
+  GameFonts.Save(game,"original");Check(game.ReadConfig("gamedata/config/fonts.ltx")==font,"font restore preserves exact original bytes");
+  Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font+"; manual\r\n"));Reject(()=>GameFonts.Save(game,"large"),"font setting refuses to overwrite external edits");
   Console.WriteLine("TOTAL "+count+" passed. Fixture: "+root);
  }
 }
