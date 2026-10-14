@@ -2,7 +2,8 @@
 
 Since launcher 1.4 the catalog (launcher-manifest.json) carries "profiles": the reference file lists of the
 builds (src/InstallProfiles.json). A new patch therefore needs NO new launcher: pass --launcher-from with the tag
-of the release that already holds ReFixLauncher.zip, and --addons-from to reuse unchanged add-on packages.
+of the release that already holds ReFixLauncher.zip (it is copied into the new release too: README links to
+.../releases/latest/download/ReFixLauncher.zip), and --addons-from to reuse unchanged add-on packages.
 
   python package.py --version 2026.10.14.3 --tag v2026.10.14.3 --notes-file notes.txt --addons-from v2026.10.13.1
   (new launcher: omit --launcher-from; dist/ReFixLauncher.exe must be freshly built by build.ps1)
@@ -50,6 +51,11 @@ def main():
         raise SystemExit('rebuilding add-ons is not supported here; pass --addons-from')
     if a.launcher_from:
         launcher = previous(a.launcher_from)['launcher']
+        # Every release carries the same ReFixLauncher.zip, so the permanent link
+        # .../releases/latest/download/ReFixLauncher.zip always works. The catalog keeps the original URL.
+        src = project / 'artifacts' / a.launcher_from / 'ReFixLauncher.zip'
+        assert sha(src) == launcher['sha256'] and src.stat().st_size == launcher['bytes'], 'ReFixLauncher.zip differs from ' + a.launcher_from
+        shutil.copy2(src, out / src.name)
     else:
         lz = out / 'ReFixLauncher.zip'
         with zipfile.ZipFile(lz, 'w', zipfile.ZIP_DEFLATED) as z:
