@@ -15,7 +15,8 @@ using System.Web.Script.Serialization;
 
 namespace ReFix {
  public class Asset { public string id; public string title; public string url; public string sha256; public long bytes; public string group; }
- public class Catalog { public int schema; public string version; public string notes; public Asset patch; public List<Asset> addons; }
+ public class LauncherAsset : Asset {public string version;}
+ public class Catalog { public int schema; public string version; public string notes; public Asset patch; public List<Asset> addons; public LauncherAsset launcher; }
  public class FileRow { public string file; public long bytes; public string sha256; }
  public class ActiveAddon { public string id; public string archive; public Dictionary<string,string> originals = new Dictionary<string,string>(); }
  public class LocalState { public string version = "Не определена"; public string patchHash = ""; public List<ActiveAddon> addons = new List<ActiveAddon>(); }

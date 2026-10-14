@@ -11,6 +11,7 @@ using System.Windows.Forms;
 namespace ReFix {
  static class Program {
   [STAThread] static void Main(string[] args) {
+   if(args.Length==2 && args[0]=="--apply-self-update") {try{SelfUpdate.Apply(args[1]);}catch(Exception ex){try{File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"error.log"),ex.ToString());}catch{}MessageBox.Show("Обновление лаунчера не завершено: "+ex.Message+"\nПредыдущие файлы сохранены в резервных копиях .refix-launcher/transactions рядом с лаунчером.","ReFix — обновление");}return;}
    bool created;
    using(var mutex=new Mutex(true,"Local\\SunChessReFixLauncher",out created)) {
     if(!created){MessageBox.Show("Лаунчер уже запущен.");return;}
@@ -29,7 +30,8 @@ namespace ReFix {
  public class MainForm:Form {
   static readonly Color Bg=Color.FromArgb(19,23,23), Card=Color.FromArgb(29,35,34), Gold=Color.FromArgb(204,173,100), Ink=Color.FromArgb(229,233,225), Muted=Color.FromArgb(163,175,166);
   Panel page; Label status,location,version; TextBox notes;
-  Button update,install,verify,fontSave,play,addonsButton,save,choose,refresh;
+  Button update,install,verify,fontSave,selfUpdate,play,addonsButton,save,choose,refresh;
+  bool selfAvailable;
   InstallationReport installation;
   ComboBox fontSize;
   PreparedPatch prepared;
@@ -46,7 +48,7 @@ namespace ReFix {
    nav.Controls.Add(Label("☢  ReFix",25,Gold));nav.Controls.Add(Label("БОЛЬШАЯ ЗОНА",10,Muted));
    var spacer=new Panel{Height=34,Width=160};nav.Controls.Add(spacer);
    foreach(string name in new[]{"Играть","Дополнения","Настройки"}) {string n=name;var b=Button(name,160);b.Height=46;b.Click+=(s,e)=>ShowPage(n);nav.Controls.Add(b);}
-   nav.Controls.Add(new Panel{Height=30,Width=160});nav.Controls.Add(Label("by SunChess\nЛаунчер 1.2.0",10,Muted));Controls.Add(nav);
+   nav.Controls.Add(new Panel{Height=30,Width=160});nav.Controls.Add(Label("by SunChess\nЛаунчер "+SelfUpdate.VersionString,10,Muted));Controls.Add(nav);
    page=new Panel {Dock=DockStyle.Fill,Padding=new Padding(28,25,28,15)};Controls.Add(page);page.BringToFront();
    BuildHome();BuildAddons();BuildSettings();ShowPage("Играть");
    Shown+=async(s,e)=> {SetRoot(initialRoot);if(game!=null)await Check();};
@@ -85,6 +87,7 @@ namespace ReFix {
     status.Text="Установка обновления…";await Task.Run(()=>game.InstallPreparedPatch(prepared));prepared=null;await Inspect();RenderState();status.Text="Обновление установлено. Проверка файлов завершена.";
    });f.Controls.Add(install);
    verify=Button("Проверить установку",280);verify.Click+=async(s,e)=>await Run(async()=>{await Inspect();RenderState();notes.Text=installation.Title+"\r\nПроверено файлов патча: "+installation.Checked+"\r\n\r\n"+(installation.Differences.Count==0?"Файлы соответствуют эталону.":String.Join("\r\n",installation.Differences));status.Text="Проверка установки завершена.";});f.Controls.Add(verify);
+   selfUpdate=Button("Обновить лаунчер",280);selfUpdate.Visible=false;selfUpdate.Click+=async(s,e)=>await UpdateLauncher();f.Controls.Add(selfUpdate);
    f.Controls.Add(Label("Новости сборки",17,Ink));
    notes=new TextBox{Multiline=true,ReadOnly=true,BorderStyle=BorderStyle.None,BackColor=Card,ForeColor=Ink,Width=700,Height=245,ScrollBars=ScrollBars.Vertical,Text="Проверка GitHub выполняется при каждом запуске.\r\nПри отсутствии сети можно продолжить игру."};f.Controls.Add(notes);
    f.Controls.Add(Label("Перед установкой создаётся резервная копия. Ваши сохранения и настройки остаются на месте.",10,Muted));
@@ -135,7 +138,7 @@ namespace ReFix {
   static void SetNumber(NumericUpDown input,decimal value){input.Value=Math.Max(input.Minimum,Math.Min(input.Maximum,value));}
   void SetRoot(string root) {
    try {
-    prepared=null;installation=null;game=new GameService(root);catalog=null;location.Text=game.Root;
+    prepared=null;installation=null;selfAvailable=false;game=new GameService(root);catalog=null;location.Text=game.Root;
     game.Progress=s=> {if(IsHandleCreated)BeginInvoke(new Action(()=>status.Text=s));};
     string u=game.ReadConfig("userdata/user.ltx"),l=game.ReadConfig("gamedata/config/bz_lord.ltx");
     Select(render,Config.Value(u,"renderer")??"renderer_r1");Select(resolution,Config.Value(u,"vid_mode")??"1920x1080");Select(texture,Config.Value(u,"texture_lod")??"0");Select(aniso,Config.Value(u,"r__tf_aniso")??"4");
@@ -156,6 +159,7 @@ namespace ReFix {
    update.Enabled=!busy&&game!=null&&catalog!=null&&(installation==null||installation.PatchHash!=catalog.patch.sha256);
    install.Enabled=!busy&&game!=null&&prepared!=null;
    verify.Enabled=!busy&&game!=null;fontSave.Enabled=!busy&&game!=null;
+    selfUpdate.Visible=selfAvailable&&catalog!=null;selfUpdate.Enabled=!busy&&selfAvailable&&catalog!=null;
   }
   async Task Run(Func<Task> action) {
    if(busy)return;busy=true;EnableActions();
@@ -164,11 +168,18 @@ namespace ReFix {
   }
   async Task Check() {
    if(busy || game==null)return;busy=true;EnableActions();
-   try {await Inspect();RenderState();status.Text="Проверка обновлений на GitHub…";catalog=await game.Check();notes.Text=(catalog.notes??"").Replace("\n","\r\n");RenderState();status.Text=installation.PatchHash==catalog.patch.sha256?"Установлена актуальная версия, файлы проверены.":"Доступен пакет исправлений. Нажмите «Скачать обновление».";}
+   try {await Inspect();RenderState();status.Text="Проверка обновлений на GitHub…";catalog=await game.Check();selfAvailable=SelfUpdate.IsNewer(catalog.launcher);selfUpdate.Text=selfAvailable?"Обновить лаунчер до "+catalog.launcher.version:"Обновить лаунчер";notes.Text=(catalog.notes??"").Replace("\n","\r\n");RenderState();status.Text=selfAvailable?"Доступна новая версия лаунчера. Нажмите «Обновить лаунчер».":installation.PatchHash==catalog.patch.sha256?"Установлена актуальная версия, файлы проверены.":"Доступен пакет исправлений. Нажмите «Скачать обновление».";}
    catch(Exception ex) {catalog=null;status.Text=installation==null?"Не удалось проверить установленные файлы.":"Не удалось проверить обновления. Можно играть с текущими файлами.";notes.Text=installation==null?ex.Message:"Сервер обновлений временно недоступен или релиз ещё не опубликован.\r\nЛокальная проверка: "+installation.Title+"\r\n\r\nИгра и сохранённые настройки доступны без сети.";}
    finally {busy=false;EnableActions();}
   }
   async Task Inspect() {status.Text="Проверка установленных файлов…";installation=await Task.Run(()=>Installation.Verify(game,Installation.Profiles()));game.Log("INSTALLATION_CHECK",installation.Title+"; differences="+installation.Differences.Count);}
+  async Task UpdateLauncher() {
+   if(busy || !selfAvailable || catalog==null)return;
+   if(MessageBox.Show(this,"Скачать новую версию и перезапустить лаунчер? Настройки игры сохранятся.","Обновление лаунчера",MessageBoxButtons.YesNo,MessageBoxIcon.Question)!=DialogResult.Yes)return;
+   bool restart=false;
+   await Run(async()=> {status.Text="Скачивание и проверка нового лаунчера…";string job=await SelfUpdate.Prepare(catalog.launcher,AppDomain.CurrentDomain.BaseDirectory,game.Root);SelfUpdate.Begin(job);restart=true;});
+   if(restart)Close();
+  }
   void Error(Exception ex){if(game!=null){try{game.Log("ERROR",ex.ToString());}catch{}}status.Text=ex.Message;MessageBox.Show(this,ex.Message,"ReFix",MessageBoxButtons.OK,MessageBoxIcon.Information);}
  }
 }

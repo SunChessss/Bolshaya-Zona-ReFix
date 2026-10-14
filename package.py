@@ -5,6 +5,7 @@ import hashlib
 import json
 import shutil
 import zipfile
+import re
 
 def sha(path):
     with path.open('rb') as stream:
@@ -58,6 +59,8 @@ def main():
     catalog = dict(schema=1, version=args.version,
                    notes='Лаунчер ReFix 1.0\n\nКумулятивные исправления V20.2 Final, включая фикс статического освещения от 13.10.2026.\n\nИсправлены 36 назначений материалов на 11 локациях. Добавления по желанию: весна, осень, минималистичный HUD и Adm-RAL NEW HUD.',
                    patch=asset(patch, 'cumulative_patch', 'Исправления ReFix', 'core'), addons=addons)
+    launcher_version = re.search(r'VersionString="([0-9.]+)"', (project / 'src/SelfUpdate.cs').read_text(encoding='utf-8')).group(1)
+    catalog['launcher'] = dict(asset(output / 'ReFixLauncher.zip', 'launcher', 'Лаунчер ReFix', 'launcher'), version=launcher_version)
     (output / 'launcher-manifest.json').write_text(json.dumps(catalog, ensure_ascii=False, indent=2), encoding='utf-8')
     files = sorted(p for p in output.iterdir() if p.is_file() and p.name != 'SHA256SUMS.txt')
     (output / 'SHA256SUMS.txt').write_text(''.join(sha(p)+'  '+p.name+'\n' for p in files), encoding='ascii')

@@ -86,6 +86,13 @@ class Tests {
   GameFonts.Save(game,"largest");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25_1024"),"largest preset uses original base without cumulative substitutions");
   GameFonts.Save(game,"original");Check(game.ReadConfig("gamedata/config/fonts.ltx")==font,"font restore preserves exact original bytes");
   Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font+"; manual\r\n"));Reject(()=>GameFonts.Save(game,"large"),"font setting refuses to overwrite external edits");
+  var launcherAsset=new LauncherAsset{version="1.4.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
+  Check(SelfUpdate.IsNewer(launcherAsset),"detect newer launcher version");launcherAsset.version="1.2.0";Check(!SelfUpdate.IsNewer(launcherAsset),"never downgrade launcher");
+  Check(!SelfUpdate.IsNewer(null),"older catalog without launcher field remains compatible");launcherAsset.version="invalid";Reject(()=>SelfUpdate.IsNewer(launcherAsset),"reject malformed launcher version");
+  string selfZip=Data.Safe(root,"self-valid.zip");using(var z=ZipFile.Open(selfZip,ZipArchiveMode.Create)){using(var s=z.CreateEntry("ReFixLauncher.exe").Open()){s.WriteByte(77);s.WriteByte(90);}using(var w=new StreamWriter(z.CreateEntry("ReFixLauncher.exe.config").Open()))w.Write("<configuration/>");}
+  Check(SelfUpdate.ReadPackage(selfZip).Count==2,"accept launcher-only package");
+  using(var z=ZipFile.Open(selfZip,ZipArchiveMode.Update)){using(var w=new StreamWriter(z.CreateEntry("../escape.exe").Open()))w.Write("bad");}
+  Reject(()=>SelfUpdate.ReadPackage(selfZip),"reject extra files and traversal in self-update");
   Console.WriteLine("TOTAL "+count+" passed. Fixture: "+root);
  }
 }
