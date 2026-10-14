@@ -16,7 +16,7 @@ using System.Web.Script.Serialization;
 namespace ReFix {
  public class Asset { public string id; public string title; public string url; public string sha256; public long bytes; public string group; }
  public class LauncherAsset : Asset {public string version;}
- public class Catalog { public int schema; public string version; public string notes; public Asset patch; public List<Asset> addons; public LauncherAsset launcher; }
+ public class Catalog { public int schema; public string version; public string notes; public Asset patch; public List<Asset> addons; public LauncherAsset launcher; public List<InstallProfile> profiles; }
  public class FileRow { public string file; public long bytes; public string sha256; }
  public class ActiveAddon { public string id; public string archive; public Dictionary<string,string> originals = new Dictionary<string,string>(); }
  public class LocalState { public string version = "Не определена"; public string patchHash = ""; public List<ActiveAddon> addons = new List<ActiveAddon>(); }
@@ -203,6 +203,7 @@ namespace ReFix {
      ValidateUrl(a.url);
      if(!Regex.IsMatch(a.sha256??"","^[a-f0-9]{64}$") || a.bytes<=0 || a.bytes>1073741824 || !Regex.IsMatch(a.id??"","^[a-z0-9_-]+$") || !ids.Add(a.id))throw new InvalidDataException("Неверное описание пакета");
     }
+    Installation.Validate(catalog.profiles);   // 1.4: reference file lists of the builds come with the catalog
     return catalog;
    }
   }

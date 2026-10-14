@@ -1,5 +1,569 @@
 [
   {
+    "version": "2026.10.14.3",
+    "title": "ReFix 14.10.2026 — навигация по заданиям, метки, статтер",
+    "patchHash": "f4dc3526fbbb25f9076851c0b5bb7d92bbdbddea1ead76bc26fbef25d65239be",
+    "files": [
+      {
+        "file": "bin/xrGame.dll",
+        "bytes": 5971968,
+        "sha256": "eb8e68a73150c19cf3881c0d00679505365f57432b9ee745d87adcac36ace9a8"
+      },
+      {
+        "file": "gamedata/config/creatures/helicopter.ltx",
+        "bytes": 10876,
+        "sha256": "ade6d8f529d3156264d2447c351efb72511af9c151587c011a85a4ae184b0c19"
+      },
+      {
+        "file": "gamedata/config/gameplay/dialogs_unic.xml",
+        "bytes": 120505,
+        "sha256": "affa1179aea9eafc89e12608535e71e05d6a97c855a7d756704876c2dbfda656"
+      },
+      {
+        "file": "gamedata/config/gameplay/dialogs_xmk.xml",
+        "bytes": 5724,
+        "sha256": "8ab2fbed19ecad1a5a9096b35ab03e07965575b38ac31fa1664f4652573bf3e3"
+      },
+      {
+        "file": "gamedata/config/gameplay/info_unic.xml",
+        "bytes": 38595,
+        "sha256": "f87f163ce1e155d1b6a6984a671ce20a0a3fd0b6db1de7f4f4c3e0d1a9a4fd74"
+      },
+      {
+        "file": "gamedata/config/misc/trade_artem.ltx",
+        "bytes": 86409,
+        "sha256": "3fa8df15c6eb3f6cc2cbd475642c602a7c9b989d5d36a7bb432c3e65ed11b252"
+      },
+      {
+        "file": "gamedata/config/misc/trade_barman.ltx",
+        "bytes": 195324,
+        "sha256": "f25f3d880730044c8466f735e065c7faf1217e78f41ff6181870292a286c7d93"
+      },
+      {
+        "file": "gamedata/config/misc/trade_dolg.ltx",
+        "bytes": 140312,
+        "sha256": "93e611460189dba8d90bb355ef38511cf41da1e9c0d9b637a2acc5971892489b"
+      },
+      {
+        "file": "gamedata/config/misc/trade_ecolog.ltx",
+        "bytes": 140376,
+        "sha256": "f6c6a7fe9b092366c3c0ad2a23da7be25b043ada9b2a9d381c53bc27869b4cc2"
+      },
+      {
+        "file": "gamedata/config/misc/trade_freedom.ltx",
+        "bytes": 195303,
+        "sha256": "a71b738bd9b3ca8d045f08546fbbe1781bb7b01d241725e88a357eaaf2e6e9f3"
+      },
+      {
+        "file": "gamedata/config/misc/trade_holodov.ltx",
+        "bytes": 85807,
+        "sha256": "3088b83d1df2d60f593d40a9401bbe08ad03ca98b2336428ee6726c2b18e52dd"
+      },
+      {
+        "file": "gamedata/config/misc/trade_krohobor.ltx",
+        "bytes": 85810,
+        "sha256": "b28ae9981b43aefd4acdeb13b03a5fdf103b3595bedede369f71769daecfcf0c"
+      },
+      {
+        "file": "gamedata/config/misc/trade_marsh_remont.ltx",
+        "bytes": 85754,
+        "sha256": "edc023b4461a020a7f400b89c82bec15e0f849b2a36bba422ece9ff7651ced7c"
+      },
+      {
+        "file": "gamedata/config/misc/trade_predbannik_barman.ltx",
+        "bytes": 85662,
+        "sha256": "929cde90cbaf78ca971f7ccef9457af6be1da8f6180f0a104e1f48d4c73fa4af"
+      },
+      {
+        "file": "gamedata/config/misc/trade_suprun.ltx",
+        "bytes": 85847,
+        "sha256": "2363ad46315933aed880c95a4384e2445132683ea768bb7992e4743ab35804c2"
+      },
+      {
+        "file": "gamedata/config/misc/trade_trader.ltx",
+        "bytes": 140665,
+        "sha256": "a17d7eb5e7835d8149ed39e4d6d38e14ee446585803766e9b37e02f5cf154f8c"
+      },
+      {
+        "file": "gamedata/config/misc/trade_voron.ltx",
+        "bytes": 62099,
+        "sha256": "1397b5c1f606bcc237908b226abbb7968a99f174c91e9f16e8525fb7f37f39d5"
+      },
+      {
+        "file": "gamedata/config/misc/trade_wereskov.ltx",
+        "bytes": 85768,
+        "sha256": "8e9827d73e3b9b4b38b4c108a0ac345dfc357ccdfc6980277aad85f184012fd4"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zaton_bill.ltx",
+        "bytes": 85865,
+        "sha256": "67f26cf71e2f29cd101b80b2a93ec3af4a859ee9a1fccb62bb590491f18cd1e5"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zaton_such.ltx",
+        "bytes": 85826,
+        "sha256": "d4df4467d8066fe0c7dbbcb2b801c810183e186dc1fcad54b0c55a0d0ac9add4"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zaton_tremor.ltx",
+        "bytes": 85849,
+        "sha256": "e0e8a9203614107001000d29e341ac45e868922ac49afa0214360e3396fe80ea"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zemlyk.ltx",
+        "bytes": 85901,
+        "sha256": "bb28e92c2ca6cad95cbf7d29d0c2d0b5e598751801924a2eef143c6e72fa60c7"
+      },
+      {
+        "file": "gamedata/config/models/vehicles/veh_mi24_u_01.ltx",
+        "bytes": 3175,
+        "sha256": "afbe774e45cecef4e6a68fab64ed7e5f5ba7698562718b56e6a4d96309810426"
+      },
+      {
+        "file": "gamedata/config/text/rus/string_table_tasks_unic.xml",
+        "bytes": 68667,
+        "sha256": "a78c8adf2f2de0f7a1933b75ea103833965e307d0c5c2cef36f4ffc47925527b"
+      },
+      {
+        "file": "gamedata/config/weapons/sr25_mk11_mod0_sk1_ral.ltx",
+        "bytes": 6067,
+        "sha256": "ac96411a00712dc6cd809d2d65755f14bc0c15bb9cc9962e4c9d8de329afe0cf"
+      },
+      {
+        "file": "gamedata/config/weapons/w_benelli_m3.ltx",
+        "bytes": 9090,
+        "sha256": "772daf2585b11303909d9f48a86bda01459fe628e5aa15f7fd4a334966a1b8b7"
+      },
+      {
+        "file": "gamedata/config/weapons/w_fn_fal_c1.ltx",
+        "bytes": 7969,
+        "sha256": "9cfb5ef137ea657d9197abdba29955390663af7130c78244098656031eacee63"
+      },
+      {
+        "file": "gamedata/config/weapons/w_ks23.ltx",
+        "bytes": 5606,
+        "sha256": "e8d165ee51e28af4cff439b16af50664916c1c3b877885a924d73528a3439f50"
+      },
+      {
+        "file": "gamedata/config/weapons/w_sayga12k_1.ltx",
+        "bytes": 8168,
+        "sha256": "81007479183a0fcc8e509873511c26b2e2d84a1c38353fb33bc5fd551b396894"
+      },
+      {
+        "file": "gamedata/config/weapons/w_usas12.ltx",
+        "bytes": 7596,
+        "sha256": "6d428f75e2f8b1d17d2cb19545d6950e4a5b30437576e103e9230d50202fba5c"
+      },
+      {
+        "file": "gamedata/config/weapons/w_vsk94.ltx",
+        "bytes": 8660,
+        "sha256": "63461e30d80e444b20de60ce630dc14b46df072fb1d16d0d04e143990fe2b802"
+      },
+      {
+        "file": "gamedata/config/weapons/weapons.ltx",
+        "bytes": 62385,
+        "sha256": "036b8cd0d752bd71705e34815e8aba84f2ce8a8141a364cf60d73cf7d704ddfe"
+      },
+      {
+        "file": "gamedata/levels/l01_escape/level",
+        "bytes": 3552147,
+        "sha256": "4fb3b0b6df675730d7bce70b938e4ed4b1250eee9229414d75722f61230ae25e"
+      },
+      {
+        "file": "gamedata/levels/l02_garbage/level",
+        "bytes": 3038572,
+        "sha256": "1faf083cd7141a5a513fa8f9d02842d3eb2ac5c97d34c04f231ebf8ee8879d81"
+      },
+      {
+        "file": "gamedata/levels/l03_agroprom/level",
+        "bytes": 2662902,
+        "sha256": "ad0fdc9b45b432eb39808d81bbb36b700000b604bba45096f7155945525205fb"
+      },
+      {
+        "file": "gamedata/levels/l04_darkvalley/level",
+        "bytes": 3283595,
+        "sha256": "eac1aa1778349f2bffda5850abbb91a7aae3f458061deebe7455db506acb11f3"
+      },
+      {
+        "file": "gamedata/levels/l05_bar/level",
+        "bytes": 2292949,
+        "sha256": "4bdfb387101baf0c5e914bb6c93b1661d581524878e4cd50c9fa7a21ff49d74d"
+      },
+      {
+        "file": "gamedata/levels/l07_military/level",
+        "bytes": 2868513,
+        "sha256": "6d1dcc74564f6a4b209048d7a5b761b997be9f7f981e4d4e3ab9de99d36f5abd"
+      },
+      {
+        "file": "gamedata/levels/l08_yantar/level",
+        "bytes": 2510572,
+        "sha256": "e225be80c989336d12871c7899d2e63530cb3359c1b3fd9e6e336f961a18712b"
+      },
+      {
+        "file": "gamedata/levels/l10_radar/level",
+        "bytes": 3453837,
+        "sha256": "de0864364e128a9171e2917e8be1f0306fb09a39b79cbec6ac89bb6689b47c86"
+      },
+      {
+        "file": "gamedata/levels/l11_pripyat/level",
+        "bytes": 3763121,
+        "sha256": "8bdf423f75fc590b981324011727b889e4c80ce908aefb304f9eba7473c87b74"
+      },
+      {
+        "file": "gamedata/levels/l12_stancia/level",
+        "bytes": 2370434,
+        "sha256": "446ac9b9d39e8bbeaa1033011d281cea6225b977f957450c142a3dcfd40ccbc9"
+      },
+      {
+        "file": "gamedata/levels/l12_stancia_2/level",
+        "bytes": 4962036,
+        "sha256": "177041897de921a650a21d64794fe2ca02ee3c5280f228b859302e39e96f3a18"
+      },
+      {
+        "file": "gamedata/scripts/amkII.script",
+        "bytes": 16050,
+        "sha256": "88d5fd050def8f3c23b4cb686f0c2716cfb25f9505b93744f0bfec94cd1d35bd"
+      },
+      {
+        "file": "gamedata/scripts/bind_stalker.script",
+        "bytes": 18516,
+        "sha256": "593bd561c526e32b4018d1bb1dd2d8b7b23a885b1cd2e47eecdacde67989a888"
+      },
+      {
+        "file": "gamedata/scripts/bz_escort.script",
+        "bytes": 9638,
+        "sha256": "a8f395c8207902b72ccd6d62f3bf45ec7a142dd657e2f59f92f3a1f45ee71122"
+      },
+      {
+        "file": "gamedata/scripts/bz_main_quest.script",
+        "bytes": 12753,
+        "sha256": "d6ff969da04f2834fd81925caa7d2bf98f3d598f804574d2b6de67d8e37ff1d0"
+      },
+      {
+        "file": "gamedata/scripts/bz_pda_marks.script",
+        "bytes": 63330,
+        "sha256": "20fdd73ad3b525392abe0c3838c2466ec77e0da2d879d9c5287166231cf5bd04"
+      },
+      {
+        "file": "gamedata/scripts/bz_profiler.script",
+        "bytes": 5432,
+        "sha256": "24c985b84763bc9dc3697754025b628ee250cbbb287942b5208cf29864101e74"
+      },
+      {
+        "file": "gamedata/scripts/bz_task_nav.script",
+        "bytes": 27264,
+        "sha256": "98f632f90a796e4f1272a47dd89fead03d339ce77395345a944af1ed4c15aa88"
+      },
+      {
+        "file": "gamedata/scripts/bz_zone_lord.script",
+        "bytes": 41628,
+        "sha256": "56d5b50834e6e75a5669ff71aa5597c2c6cc2607038e8ea04c263767ad24f27c"
+      },
+      {
+        "file": "gamedata/scripts/ogsm_hideout.script",
+        "bytes": 55550,
+        "sha256": "757af9731c4b3c2388d4e769e51e63d1eef430b9c89c15dc279c547b312a7869"
+      },
+      {
+        "file": "gamedata/scripts/ogsm_respawn.script",
+        "bytes": 155202,
+        "sha256": "471b55fdcba8bd1791a04af1f9fbd12cbe60188c33adcc29d27f0a254cd937a9"
+      },
+      {
+        "file": "gamedata/scripts/ogsm_surge.script",
+        "bytes": 30229,
+        "sha256": "c6e9582d29f2bb661bb1264c2dfaf1c0eb88bf91ba493e8775f9f74ef0689fd9"
+      },
+      {
+        "file": "gamedata/scripts/sak_off_corpses.script",
+        "bytes": 40683,
+        "sha256": "0fee348031bb4d258aff8ec4bb52307bad69a04fdc32efd6da9ae0e609beaa1b"
+      },
+      {
+        "file": "gamedata/scripts/smart_terrain.script",
+        "bytes": 37330,
+        "sha256": "3bac56583c1afde871b7b2e48763076735c24aabc5ef352b29136149afd33b37"
+      },
+      {
+        "file": "gamedata/scripts/sound_theme.script",
+        "bytes": 71520,
+        "sha256": "de172c578fa646f29fd4424002df9e26451f9c4be92c18ba246b55f0426c9394"
+      },
+      {
+        "file": "gamedata/scripts/xr_motivator.script",
+        "bytes": 16980,
+        "sha256": "5fb83b2c9c356721cb8d2367bb35d786f2ff37355c3ec8d0c3aa4a27a0c70b4e"
+      },
+      {
+        "file": "gamedata/scripts/xr_sound.script",
+        "bytes": 13256,
+        "sha256": "bdda4d09116497dfbb15e84f84188f6a1f75dd6b86f2e07a74536064bdbd6fc9"
+      }
+    ]
+  },
+  {
+    "version": "2026.10.14.2",
+    "title": "ReFix 14.10.2026 — Хмель и выброс",
+    "patchHash": "f7ab583c3b6bc515db3598d902e5a696783a1fbd952734d92dd06012adfbeec7",
+    "files": [
+      {
+        "file": "bin/xrGame.dll",
+        "bytes": 5971968,
+        "sha256": "eb8e68a73150c19cf3881c0d00679505365f57432b9ee745d87adcac36ace9a8"
+      },
+      {
+        "file": "gamedata/config/creatures/helicopter.ltx",
+        "bytes": 10876,
+        "sha256": "ade6d8f529d3156264d2447c351efb72511af9c151587c011a85a4ae184b0c19"
+      },
+      {
+        "file": "gamedata/config/misc/trade_artem.ltx",
+        "bytes": 86409,
+        "sha256": "3fa8df15c6eb3f6cc2cbd475642c602a7c9b989d5d36a7bb432c3e65ed11b252"
+      },
+      {
+        "file": "gamedata/config/misc/trade_barman.ltx",
+        "bytes": 195324,
+        "sha256": "f25f3d880730044c8466f735e065c7faf1217e78f41ff6181870292a286c7d93"
+      },
+      {
+        "file": "gamedata/config/misc/trade_dolg.ltx",
+        "bytes": 140312,
+        "sha256": "93e611460189dba8d90bb355ef38511cf41da1e9c0d9b637a2acc5971892489b"
+      },
+      {
+        "file": "gamedata/config/misc/trade_ecolog.ltx",
+        "bytes": 140376,
+        "sha256": "f6c6a7fe9b092366c3c0ad2a23da7be25b043ada9b2a9d381c53bc27869b4cc2"
+      },
+      {
+        "file": "gamedata/config/misc/trade_freedom.ltx",
+        "bytes": 195303,
+        "sha256": "a71b738bd9b3ca8d045f08546fbbe1781bb7b01d241725e88a357eaaf2e6e9f3"
+      },
+      {
+        "file": "gamedata/config/misc/trade_holodov.ltx",
+        "bytes": 85807,
+        "sha256": "3088b83d1df2d60f593d40a9401bbe08ad03ca98b2336428ee6726c2b18e52dd"
+      },
+      {
+        "file": "gamedata/config/misc/trade_krohobor.ltx",
+        "bytes": 85810,
+        "sha256": "b28ae9981b43aefd4acdeb13b03a5fdf103b3595bedede369f71769daecfcf0c"
+      },
+      {
+        "file": "gamedata/config/misc/trade_marsh_remont.ltx",
+        "bytes": 85754,
+        "sha256": "edc023b4461a020a7f400b89c82bec15e0f849b2a36bba422ece9ff7651ced7c"
+      },
+      {
+        "file": "gamedata/config/misc/trade_predbannik_barman.ltx",
+        "bytes": 85662,
+        "sha256": "929cde90cbaf78ca971f7ccef9457af6be1da8f6180f0a104e1f48d4c73fa4af"
+      },
+      {
+        "file": "gamedata/config/misc/trade_suprun.ltx",
+        "bytes": 85847,
+        "sha256": "2363ad46315933aed880c95a4384e2445132683ea768bb7992e4743ab35804c2"
+      },
+      {
+        "file": "gamedata/config/misc/trade_trader.ltx",
+        "bytes": 140665,
+        "sha256": "a17d7eb5e7835d8149ed39e4d6d38e14ee446585803766e9b37e02f5cf154f8c"
+      },
+      {
+        "file": "gamedata/config/misc/trade_voron.ltx",
+        "bytes": 62099,
+        "sha256": "1397b5c1f606bcc237908b226abbb7968a99f174c91e9f16e8525fb7f37f39d5"
+      },
+      {
+        "file": "gamedata/config/misc/trade_wereskov.ltx",
+        "bytes": 85768,
+        "sha256": "8e9827d73e3b9b4b38b4c108a0ac345dfc357ccdfc6980277aad85f184012fd4"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zaton_bill.ltx",
+        "bytes": 85865,
+        "sha256": "67f26cf71e2f29cd101b80b2a93ec3af4a859ee9a1fccb62bb590491f18cd1e5"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zaton_such.ltx",
+        "bytes": 85826,
+        "sha256": "d4df4467d8066fe0c7dbbcb2b801c810183e186dc1fcad54b0c55a0d0ac9add4"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zaton_tremor.ltx",
+        "bytes": 85849,
+        "sha256": "e0e8a9203614107001000d29e341ac45e868922ac49afa0214360e3396fe80ea"
+      },
+      {
+        "file": "gamedata/config/misc/trade_zemlyk.ltx",
+        "bytes": 85901,
+        "sha256": "bb28e92c2ca6cad95cbf7d29d0c2d0b5e598751801924a2eef143c6e72fa60c7"
+      },
+      {
+        "file": "gamedata/config/models/vehicles/veh_mi24_u_01.ltx",
+        "bytes": 3175,
+        "sha256": "afbe774e45cecef4e6a68fab64ed7e5f5ba7698562718b56e6a4d96309810426"
+      },
+      {
+        "file": "gamedata/config/text/rus/string_table_tasks_unic.xml",
+        "bytes": 68667,
+        "sha256": "a78c8adf2f2de0f7a1933b75ea103833965e307d0c5c2cef36f4ffc47925527b"
+      },
+      {
+        "file": "gamedata/config/weapons/sr25_mk11_mod0_sk1_ral.ltx",
+        "bytes": 6067,
+        "sha256": "ac96411a00712dc6cd809d2d65755f14bc0c15bb9cc9962e4c9d8de329afe0cf"
+      },
+      {
+        "file": "gamedata/config/weapons/w_benelli_m3.ltx",
+        "bytes": 9090,
+        "sha256": "772daf2585b11303909d9f48a86bda01459fe628e5aa15f7fd4a334966a1b8b7"
+      },
+      {
+        "file": "gamedata/config/weapons/w_fn_fal_c1.ltx",
+        "bytes": 7969,
+        "sha256": "9cfb5ef137ea657d9197abdba29955390663af7130c78244098656031eacee63"
+      },
+      {
+        "file": "gamedata/config/weapons/w_ks23.ltx",
+        "bytes": 5606,
+        "sha256": "e8d165ee51e28af4cff439b16af50664916c1c3b877885a924d73528a3439f50"
+      },
+      {
+        "file": "gamedata/config/weapons/w_sayga12k_1.ltx",
+        "bytes": 8168,
+        "sha256": "81007479183a0fcc8e509873511c26b2e2d84a1c38353fb33bc5fd551b396894"
+      },
+      {
+        "file": "gamedata/config/weapons/w_usas12.ltx",
+        "bytes": 7596,
+        "sha256": "6d428f75e2f8b1d17d2cb19545d6950e4a5b30437576e103e9230d50202fba5c"
+      },
+      {
+        "file": "gamedata/config/weapons/w_vsk94.ltx",
+        "bytes": 8660,
+        "sha256": "63461e30d80e444b20de60ce630dc14b46df072fb1d16d0d04e143990fe2b802"
+      },
+      {
+        "file": "gamedata/config/weapons/weapons.ltx",
+        "bytes": 62385,
+        "sha256": "036b8cd0d752bd71705e34815e8aba84f2ce8a8141a364cf60d73cf7d704ddfe"
+      },
+      {
+        "file": "gamedata/levels/l01_escape/level",
+        "bytes": 3552147,
+        "sha256": "4fb3b0b6df675730d7bce70b938e4ed4b1250eee9229414d75722f61230ae25e"
+      },
+      {
+        "file": "gamedata/levels/l02_garbage/level",
+        "bytes": 3038572,
+        "sha256": "1faf083cd7141a5a513fa8f9d02842d3eb2ac5c97d34c04f231ebf8ee8879d81"
+      },
+      {
+        "file": "gamedata/levels/l03_agroprom/level",
+        "bytes": 2662902,
+        "sha256": "ad0fdc9b45b432eb39808d81bbb36b700000b604bba45096f7155945525205fb"
+      },
+      {
+        "file": "gamedata/levels/l04_darkvalley/level",
+        "bytes": 3283595,
+        "sha256": "eac1aa1778349f2bffda5850abbb91a7aae3f458061deebe7455db506acb11f3"
+      },
+      {
+        "file": "gamedata/levels/l05_bar/level",
+        "bytes": 2292949,
+        "sha256": "4bdfb387101baf0c5e914bb6c93b1661d581524878e4cd50c9fa7a21ff49d74d"
+      },
+      {
+        "file": "gamedata/levels/l07_military/level",
+        "bytes": 2868513,
+        "sha256": "6d1dcc74564f6a4b209048d7a5b761b997be9f7f981e4d4e3ab9de99d36f5abd"
+      },
+      {
+        "file": "gamedata/levels/l08_yantar/level",
+        "bytes": 2510572,
+        "sha256": "e225be80c989336d12871c7899d2e63530cb3359c1b3fd9e6e336f961a18712b"
+      },
+      {
+        "file": "gamedata/levels/l10_radar/level",
+        "bytes": 3453837,
+        "sha256": "de0864364e128a9171e2917e8be1f0306fb09a39b79cbec6ac89bb6689b47c86"
+      },
+      {
+        "file": "gamedata/levels/l11_pripyat/level",
+        "bytes": 3763121,
+        "sha256": "8bdf423f75fc590b981324011727b889e4c80ce908aefb304f9eba7473c87b74"
+      },
+      {
+        "file": "gamedata/levels/l12_stancia/level",
+        "bytes": 2370434,
+        "sha256": "446ac9b9d39e8bbeaa1033011d281cea6225b977f957450c142a3dcfd40ccbc9"
+      },
+      {
+        "file": "gamedata/levels/l12_stancia_2/level",
+        "bytes": 4962036,
+        "sha256": "177041897de921a650a21d64794fe2ca02ee3c5280f228b859302e39e96f3a18"
+      },
+      {
+        "file": "gamedata/scripts/bind_stalker.script",
+        "bytes": 18290,
+        "sha256": "d1d7a4534642ed4566eab195d521ed08f4df1c605955fea296911ade2e102a92"
+      },
+      {
+        "file": "gamedata/scripts/bz_escort.script",
+        "bytes": 9638,
+        "sha256": "a8f395c8207902b72ccd6d62f3bf45ec7a142dd657e2f59f92f3a1f45ee71122"
+      },
+      {
+        "file": "gamedata/scripts/bz_main_quest.script",
+        "bytes": 12753,
+        "sha256": "d6ff969da04f2834fd81925caa7d2bf98f3d598f804574d2b6de67d8e37ff1d0"
+      },
+      {
+        "file": "gamedata/scripts/bz_pda_marks.script",
+        "bytes": 58051,
+        "sha256": "ed986bcdeb7f46b02b708ff9ebc158d2c356f7b166bab149b4d7342141572c4b"
+      },
+      {
+        "file": "gamedata/scripts/bz_profiler.script",
+        "bytes": 5432,
+        "sha256": "24c985b84763bc9dc3697754025b628ee250cbbb287942b5208cf29864101e74"
+      },
+      {
+        "file": "gamedata/scripts/bz_zone_lord.script",
+        "bytes": 41628,
+        "sha256": "56d5b50834e6e75a5669ff71aa5597c2c6cc2607038e8ea04c263767ad24f27c"
+      },
+      {
+        "file": "gamedata/scripts/ogsm_hideout.script",
+        "bytes": 55550,
+        "sha256": "757af9731c4b3c2388d4e769e51e63d1eef430b9c89c15dc279c547b312a7869"
+      },
+      {
+        "file": "gamedata/scripts/ogsm_respawn.script",
+        "bytes": 155202,
+        "sha256": "471b55fdcba8bd1791a04af1f9fbd12cbe60188c33adcc29d27f0a254cd937a9"
+      },
+      {
+        "file": "gamedata/scripts/ogsm_surge.script",
+        "bytes": 30229,
+        "sha256": "c6e9582d29f2bb661bb1264c2dfaf1c0eb88bf91ba493e8775f9f74ef0689fd9"
+      },
+      {
+        "file": "gamedata/scripts/sak_off_corpses.script",
+        "bytes": 40683,
+        "sha256": "0fee348031bb4d258aff8ec4bb52307bad69a04fdc32efd6da9ae0e609beaa1b"
+      },
+      {
+        "file": "gamedata/scripts/xr_motivator.script",
+        "bytes": 16980,
+        "sha256": "5fb83b2c9c356721cb8d2367bb35d786f2ff37355c3ec8d0c3aa4a27a0c70b4e"
+      }
+    ]
+  },
+  {
     "version": "2026.10.13.1",
     "title": "ReFix + исправления 13.10.2026",
     "patchHash": "1c851d79c462f56005f976d977f0d4d388ce69e4168e5844003fc8f436ab5013",

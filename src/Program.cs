@@ -168,11 +168,11 @@ namespace ReFix {
   }
   async Task Check() {
    if(busy || game==null)return;busy=true;EnableActions();
-   try {await Inspect();RenderState();status.Text="Проверка обновлений на GitHub…";catalog=await game.Check();selfAvailable=SelfUpdate.IsNewer(catalog.launcher);selfUpdate.Text=selfAvailable?"Обновить лаунчер до "+catalog.launcher.version:"Обновить лаунчер";notes.Text=(catalog.notes??"").Replace("\n","\r\n");RenderState();status.Text=selfAvailable?"Доступна новая версия лаунчера. Нажмите «Обновить лаунчер».":installation.PatchHash==catalog.patch.sha256?"Установлена актуальная версия, файлы проверены.":"Доступен пакет исправлений. Нажмите «Скачать обновление».";}
+   try {await Inspect();RenderState();status.Text="Проверка обновлений на GitHub…";catalog=await game.Check();if(catalog.profiles!=null&&catalog.profiles.Count>0)await Inspect();selfAvailable=SelfUpdate.IsNewer(catalog.launcher);selfUpdate.Text=selfAvailable?"Обновить лаунчер до "+catalog.launcher.version:"Обновить лаунчер";notes.Text=(catalog.notes??"").Replace("\n","\r\n");RenderState();status.Text=selfAvailable?"Доступна новая версия лаунчера. Нажмите «Обновить лаунчер».":installation.PatchHash==catalog.patch.sha256?"Установлена актуальная версия, файлы проверены.":"Доступен пакет исправлений. Нажмите «Скачать обновление».";}
    catch(Exception ex) {catalog=null;status.Text=installation==null?"Не удалось проверить установленные файлы.":"Не удалось проверить обновления. Можно играть с текущими файлами.";notes.Text=installation==null?ex.Message:"Сервер обновлений временно недоступен или релиз ещё не опубликован.\r\nЛокальная проверка: "+installation.Title+"\r\n\r\nИгра и сохранённые настройки доступны без сети.";}
    finally {busy=false;EnableActions();}
   }
-  async Task Inspect() {status.Text="Проверка установленных файлов…";installation=await Task.Run(()=>Installation.Verify(game,Installation.Profiles()));game.Log("INSTALLATION_CHECK",installation.Title+"; differences="+installation.Differences.Count);}
+  async Task Inspect() {status.Text="Проверка установленных файлов…";var profiles=Installation.Profiles(game.Root,catalog);installation=await Task.Run(()=>Installation.Verify(game,profiles));game.Log("INSTALLATION_CHECK",installation.Title+"; differences="+installation.Differences.Count);}
   async Task UpdateLauncher() {
    if(busy || !selfAvailable || catalog==null)return;
    if(MessageBox.Show(this,"Скачать новую версию и перезапустить лаунчер? Настройки игры сохранятся.","Обновление лаунчера",MessageBoxButtons.YesNo,MessageBoxIcon.Question)!=DialogResult.Yes)return;

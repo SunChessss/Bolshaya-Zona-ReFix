@@ -78,7 +78,20 @@ class Tests {
   Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
   known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
   Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
-  Check(Installation.Profiles().Count==2 && Installation.Profiles()[0].files.Count==50,"embedded current and pre-patch profiles available offline");
+  Check(Installation.Profiles().Count==4 && Installation.Profiles()[0].files.Count==59,"embedded current and pre-patch profiles available offline");
+  // 1.4: reference profiles published in the release catalog, cached for offline checks
+  Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("catalog build"));
+  var fresh=new InstallProfile{title="Catalog release",version="2099.1.1.1",patchHash=new string('c',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}};
+  var cat=new Catalog{profiles=new List<InstallProfile>{fresh}};
+  var merged=Installation.Profiles(root,cat);
+  Check(merged[0].title=="Catalog release" && merged.Count==Installation.Profiles().Count+1,"catalog profiles come first, embedded ones kept");
+  Check(Installation.Verify(game,merged).PatchHash==new string('c',64),"build from catalog recognised without a new launcher");
+  Check(File.Exists(Data.Safe(root,Installation.CacheFile)) && Installation.Profiles(root,null)[0].title=="Catalog release","catalog profiles cached for offline checks");
+  Check(Installation.Profiles(root,new Catalog{profiles=new List<InstallProfile>{fresh,fresh}}).Count==merged.Count,"duplicate profiles merged by patch hash");
+  Reject(()=>Installation.Validate(new List<InstallProfile>{new InstallProfile{title="bad",patchHash=new string('d',64),files=new List<FileRow>{new FileRow{file="../escape",sha256=new string('a',64)}}}}),"reject traversal in catalog profile");
+  Reject(()=>Installation.Validate(new List<InstallProfile>{new InstallProfile{title="bad",patchHash=new string('d',64),files=new List<FileRow>{new FileRow{file="gamedata/x",sha256="nothex"}}}}),"reject malformed hash in catalog profile");
+  Data.Atomic(Data.Safe(root,Installation.CacheFile),Encoding.ASCII.GetBytes("{broken"));
+  Check(Installation.Profiles(root,null).Count==Installation.Profiles().Count,"broken cache ignored, embedded profiles used");
   string font="; исходный шрифт\r\n[ui_font_letterica16_russian]\r\ntexture = ui\\ui_font_letter_16_1024\r\n";
   Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font));
   foreach(string n in new[]{"16","18","25"})foreach(string ext in new[]{"dds","ini"})Data.Atomic(Data.Safe(root,"gamedata/textures/ui/ui_font_letter_"+n+"_1024."+ext),new byte[]{0});
@@ -86,7 +99,7 @@ class Tests {
   GameFonts.Save(game,"largest");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25_1024"),"largest preset uses original base without cumulative substitutions");
   GameFonts.Save(game,"original");Check(game.ReadConfig("gamedata/config/fonts.ltx")==font,"font restore preserves exact original bytes");
   Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font+"; manual\r\n"));Reject(()=>GameFonts.Save(game,"large"),"font setting refuses to overwrite external edits");
-  var launcherAsset=new LauncherAsset{version="1.4.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
+  var launcherAsset=new LauncherAsset{version="1.5.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
   Check(SelfUpdate.IsNewer(launcherAsset),"detect newer launcher version");launcherAsset.version="1.2.0";Check(!SelfUpdate.IsNewer(launcherAsset),"never downgrade launcher");
   Check(!SelfUpdate.IsNewer(null),"older catalog without launcher field remains compatible");launcherAsset.version="invalid";Reject(()=>SelfUpdate.IsNewer(launcherAsset),"reject malformed launcher version");
   string selfZip=Data.Safe(root,"self-valid.zip");using(var z=ZipFile.Open(selfZip,ZipArchiveMode.Create)){using(var s=z.CreateEntry("ReFixLauncher.exe").Open()){s.WriteByte(77);s.WriteByte(90);}using(var w=new StreamWriter(z.CreateEntry("ReFixLauncher.exe.config").Open()))w.Write("<configuration/>");}

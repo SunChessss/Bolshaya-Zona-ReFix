@@ -13,6 +13,29 @@ namespace ReFix {
    using(var s=typeof(Installation).Assembly.GetManifestResourceStream("ReFix.InstallProfiles.json"))
    using(var r=new StreamReader(s))return Data.Read<List<InstallProfile>>(r.ReadToEnd());
   }
+  public const string CacheFile=".refix-launcher/install-profiles.json";
+  // 1.4: profiles of new builds are published in launcher-manifest.json ("profiles"), so a new patch does not need
+  // a new launcher. They are cached in the game folder for offline checks. Embedded profiles stay as a fallback.
+  public static List<InstallProfile> Profiles(string root,Catalog catalog) {
+   var result=new List<InstallProfile>();var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+   List<InstallProfile> cached=null;
+   if(root!=null)try{string path=Data.Safe(root,CacheFile);if(File.Exists(path)){cached=Data.Read<List<InstallProfile>>(File.ReadAllText(path));Validate(cached);}}catch{cached=null;}
+   var fromCatalog=catalog==null?null:catalog.profiles;
+   foreach(var list in new[]{fromCatalog,cached,Profiles()})if(list!=null)foreach(var p in list)if(p!=null && seen.Add(p.patchHash))result.Add(p);
+   if(root!=null && fromCatalog!=null && fromCatalog.Count>0)try{Data.WriteJson(Data.Safe(root,CacheFile),result);}catch{}
+   return result;
+  }
+  public static void Validate(List<InstallProfile> profiles) {
+   if(profiles==null)return;
+   if(profiles.Count>64)throw new System.IO.InvalidDataException("Слишком много эталонов сборки в каталоге");
+   foreach(var p in profiles) {
+    if(p==null || String.IsNullOrWhiteSpace(p.title) || p.files==null || p.files.Count==0 || p.files.Count>4096 || !System.Text.RegularExpressions.Regex.IsMatch(p.patchHash??"","^([a-f0-9]{64})?$"))throw new System.IO.InvalidDataException("Неверный эталон сборки в каталоге");
+    foreach(var row in p.files) {
+     Data.Safe(Path.GetTempPath(),row.file);
+     if(!System.Text.RegularExpressions.Regex.IsMatch(row.sha256??"","^[a-f0-9]{64}$"))throw new System.IO.InvalidDataException("Неверный эталон сборки в каталоге");
+    }
+   }
+  }
   public static InstallationReport Verify(GameService game,List<InstallProfile> profiles) {
    return Verify(game.Root,game.State,profiles);
   }
