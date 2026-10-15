@@ -9,16 +9,16 @@ namespace ReFix {
    string path=Data.Safe(game.Root,StatePath);if(!File.Exists(path))return "original";
    var state=Data.Read<FontSetting>(File.ReadAllText(path));return Data.HashFile(Data.Safe(game.Root,ConfigPath))==state.hash?state.preset:"custom";
   }
-  // 1.5: light=true — вместо жирного штатного атласа letter_25 используется нежирный letter_25r (поставляется с патчем);
-  // так же заменяется и сам шрифт letterica25 (крупные заголовки), чтобы весь крупный текст был одного начертания.
+  // 1.5: light=true — вместо штатных атласов используются letter_25r / letter_18r (Inter, поставляются с патчем);
+  // так же заменяется и сам шрифт letterica25 (крупные заголовки), чтобы весь крупный текст был одной гарнитуры.
   public static string Transform(string original,string preset,bool light=false) {
    if(preset=="original")return original;
    if(preset!="large" && preset!="largest")throw new ArgumentException("Неизвестный размер шрифта");
-   string big=light?"letter_25r":"letter_25";
-   return Regex.Replace(original,@"(?im)^(\s*texture(?:800|1600)?\s*=\s*ui\\ui_font_)(letter_(?:16|18|25)|arial_14)(_(?:800|1024|1600))(?=\s*(?:;|$))",m=>m.Groups[1].Value+(m.Groups[2].Value=="arial_14"?"arial_21":m.Groups[2].Value=="letter_16" && preset=="large"?"letter_18":m.Groups[2].Value=="letter_25" && !light?"letter_25":big)+m.Groups[3].Value);
+   string big=light?"letter_25r":"letter_25",mid=light?"letter_18r":"letter_18";
+   return Regex.Replace(original,@"(?im)^(\s*texture(?:800|1600)?\s*=\s*ui\\ui_font_)(letter_(?:16|18|25)|arial_14)(_(?:800|1024|1600))(?=\s*(?:;|$))",m=>m.Groups[1].Value+(m.Groups[2].Value=="arial_14"?"arial_21":m.Groups[2].Value=="letter_16" && preset=="large"?mid:m.Groups[2].Value=="letter_25" && !light?"letter_25":big)+m.Groups[3].Value);
   }
   public static bool LightAvailable(GameService game) {
-   foreach(string r in new[]{"800","1024","1600"})foreach(string ext in new[]{"dds","ini"})if(!File.Exists(Data.Safe(game.Root,"gamedata/textures/ui/ui_font_letter_25r_"+r+"."+ext)))return false;
+   foreach(string n in new[]{"25r","18r"})foreach(string r in new[]{"800","1024","1600"})foreach(string ext in new[]{"dds","ini"})if(!File.Exists(Data.Safe(game.Root,"gamedata/textures/ui/ui_font_letter_"+n+"_"+r+"."+ext)))return false;
    return true;
   }
   public static void Save(GameService game,string preset) {

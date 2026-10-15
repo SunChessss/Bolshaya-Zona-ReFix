@@ -121,7 +121,7 @@ namespace ReFix {
    grass=Number(20,60,5,30);Row(table,"Шаг травы (меньше — гуще)",grass);
    gamma=Number(0.5m,1.5m,0.05m,1,2);Row(table,"Гамма",gamma);
    fontSize=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Очень крупный","largest"),new Choice("Изменён вне лаунчера","custom"));Row(table,"Текст интерфейса игры",fontSize);
-   f.Controls.Add(Label("Размер текста Arial/Letterica: диалоги, КПК и другие окна с этими шрифтами. После перезапуска игры. Крупный текст может не помещаться в отдельных окнах. С патчем от 15.10.2026 крупный текст не жирный.",10,Muted));
+   f.Controls.Add(Label("Размер текста Arial/Letterica: диалоги, КПК и другие окна с этими шрифтами. После перезапуска игры. Крупный текст может не помещаться в отдельных окнах. С патчем от 15.10.2026 (3) крупный текст — шрифт Inter (обычное начертание).",10,Muted));
    fontSave=Button("Применить размер текста",280);fontSave.Click+=async(s,e)=>await Run(async()=>{string preset=Selected(fontSize);await Task.Run(()=>GameFonts.Save(game,preset));status.Text="Размер текста сохранён. Перезапустите игру.";});f.Controls.Add(fontSave);
    var ui=SettingsTable(f);
    uiScale=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Изменён вне лаунчера","custom"));Row(ui,"Масштаб интерфейса",uiScale);

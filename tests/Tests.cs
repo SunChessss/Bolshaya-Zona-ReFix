@@ -78,7 +78,7 @@ class Tests {
   Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
   known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
   Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
-  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.15.2" && Installation.Profiles()[0].files.Count==110 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
+  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.15.3" && Installation.Profiles()[0].files.Count==116 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
   // 1.4: reference profiles published in the release catalog, cached for offline checks
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("catalog build"));
   var fresh=new InstallProfile{title="Catalog release",version="2099.1.1.1",patchHash=new string('c',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}};
@@ -103,9 +103,13 @@ class Tests {
   Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font));
   Check(!GameFonts.LightAvailable(game),"light atlas not available before the patch");
   foreach(string r in new[]{"800","1024","1600"})foreach(string ext in new[]{"dds","ini"})Data.Atomic(Data.Safe(root,"gamedata/textures/ui/ui_font_letter_25r_"+r+"."+ext),new byte[]{0});
+  Check(!GameFonts.LightAvailable(game),"light atlas needs both 25r and 18r");
+  foreach(string r in new[]{"800","1024","1600"})foreach(string ext in new[]{"dds","ini"})Data.Atomic(Data.Safe(root,"gamedata/textures/ui/ui_font_letter_18r_"+r+"."+ext),new byte[]{0});
   Check(GameFonts.LightAvailable(game),"light atlas detected");
+  GameFonts.Save(game,"large");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_18r_1024"),"large preset uses the light 18 atlas when available");
   GameFonts.Save(game,"largest");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25r_1024") && !game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25_1024"),"largest preset uses the light atlas when available");
-  Check(GameFonts.Transform("texture = ui\\ui_font_letter_25_1024\r\ntexture800 = ui\\ui_font_letter_18_800\r\n","large",true)=="texture = ui\\ui_font_letter_25r_1024\r\ntexture800 = ui\\ui_font_letter_25r_800\r\n","light preset replaces letterica25 and letterica18 atlases");
+  Check(GameFonts.Transform("texture = ui\\ui_font_letter_25_1024\r\ntexture800 = ui\\ui_font_letter_18_800\r\ntexture1600 = ui\\ui_font_letter_16_1024\r\n","large",true)=="texture = ui\\ui_font_letter_25r_1024\r\ntexture800 = ui\\ui_font_letter_25r_800\r\ntexture1600 = ui\\ui_font_letter_18r_1024\r\n","light preset replaces letterica25/18/16 atlases");
+  Check(GameFonts.Transform("texture = ui\\ui_font_letter_16_1024\r\n","largest",true)=="texture = ui\\ui_font_letter_25r_1024\r\n","largest light preset maps letterica16 to 25r");
   Check(GameFonts.Transform("texture = ui\\ui_font_letter_25_1024\r\n","large",false)=="texture = ui\\ui_font_letter_25_1024\r\n","without the light atlas letterica25 stays untouched");
   GameFonts.Save(game,"original");Check(game.ReadConfig("gamedata/config/fonts.ltx")==font,"font restore after light preset preserves exact original bytes");
   // 1.5: UI scale preset — alternative window layouts from gamedata/config/ui_large
