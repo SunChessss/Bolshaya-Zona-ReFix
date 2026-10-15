@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace ReFix {
  public class SelfUpdateJob {public string root;public string game;public int parent;public long started;public string exeHash;public string configHash;}
  public static class SelfUpdate {
-  public const string VersionString="1.4.0";
+  public const string VersionString="1.5.0";
   public static bool IsNewer(LauncherAsset asset) {
    if(asset==null)return false;
    Version version;if(!Version.TryParse(asset.version,out version))throw new InvalidDataException("Неверная версия лаунчера в каталоге.");

@@ -9,10 +9,17 @@ namespace ReFix {
    string path=Data.Safe(game.Root,StatePath);if(!File.Exists(path))return "original";
    var state=Data.Read<FontSetting>(File.ReadAllText(path));return Data.HashFile(Data.Safe(game.Root,ConfigPath))==state.hash?state.preset:"custom";
   }
-  public static string Transform(string original,string preset) {
+  // 1.5: light=true — вместо жирного штатного атласа letter_25 используется нежирный letter_25r (поставляется с патчем);
+  // так же заменяется и сам шрифт letterica25 (крупные заголовки), чтобы весь крупный текст был одного начертания.
+  public static string Transform(string original,string preset,bool light=false) {
    if(preset=="original")return original;
    if(preset!="large" && preset!="largest")throw new ArgumentException("Неизвестный размер шрифта");
-   return Regex.Replace(original,@"(?im)^(\s*texture(?:800|1600)?\s*=\s*ui\\ui_font_)(letter_(?:16|18)|arial_14)(_(?:800|1024|1600))(?=\s*(?:;|$))",m=>m.Groups[1].Value+(m.Groups[2].Value=="arial_14"?"arial_21":m.Groups[2].Value=="letter_16" && preset=="large"?"letter_18":"letter_25")+m.Groups[3].Value);
+   string big=light?"letter_25r":"letter_25";
+   return Regex.Replace(original,@"(?im)^(\s*texture(?:800|1600)?\s*=\s*ui\\ui_font_)(letter_(?:16|18|25)|arial_14)(_(?:800|1024|1600))(?=\s*(?:;|$))",m=>m.Groups[1].Value+(m.Groups[2].Value=="arial_14"?"arial_21":m.Groups[2].Value=="letter_16" && preset=="large"?"letter_18":m.Groups[2].Value=="letter_25" && !light?"letter_25":big)+m.Groups[3].Value);
+  }
+  public static bool LightAvailable(GameService game) {
+   foreach(string r in new[]{"800","1024","1600"})foreach(string ext in new[]{"dds","ini"})if(!File.Exists(Data.Safe(game.Root,"gamedata/textures/ui/ui_font_letter_25r_"+r+"."+ext)))return false;
+   return true;
   }
   public static void Save(GameService game,string preset) {
    game.EnsureStopped();string config=Data.Safe(game.Root,ConfigPath);byte[] current=File.ReadAllBytes(config);
@@ -21,7 +28,7 @@ namespace ReFix {
    if(previous==null && preset=="original")return;
    byte[] original=previous==null?current:File.ReadAllBytes(Data.Safe(game.Root,BackupPath));
    if(previous!=null && Data.Hash(original)!=previous.original)throw new IOException("Резервная копия шрифтов повреждена.");
-   string text=Data.Legacy.GetString(original),updated=Transform(text,preset);
+   string text=Data.Legacy.GetString(original),updated=Transform(text,preset,LightAvailable(game));
    if(preset!="original" && text==updated)throw new IOException("В этой сборке не найдены поддерживаемые шрифты Arial/Letterica.");
    foreach(Match m in Regex.Matches(updated,@"(?im)^\s*texture(?:800|1600)?\s*=\s*([^;\r\n]+)")) {
     string texture=m.Groups[1].Value.Trim().Replace('\\','/');

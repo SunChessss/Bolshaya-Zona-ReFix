@@ -78,7 +78,7 @@ class Tests {
   Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
   known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
   Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
-  Check(Installation.Profiles().Count==4 && Installation.Profiles()[0].files.Count==59,"embedded current and pre-patch profiles available offline");
+  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.15.2" && Installation.Profiles()[0].files.Count==110 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
   // 1.4: reference profiles published in the release catalog, cached for offline checks
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("catalog build"));
   var fresh=new InstallProfile{title="Catalog release",version="2099.1.1.1",patchHash=new string('c',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}};
@@ -99,6 +99,32 @@ class Tests {
   GameFonts.Save(game,"largest");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25_1024"),"largest preset uses original base without cumulative substitutions");
   GameFonts.Save(game,"original");Check(game.ReadConfig("gamedata/config/fonts.ltx")==font,"font restore preserves exact original bytes");
   Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font+"; manual\r\n"));Reject(()=>GameFonts.Save(game,"large"),"font setting refuses to overwrite external edits");
+  // 1.5: light (non-bold) large atlas letter_25r when shipped with the patch; the letterica25 font itself follows
+  Data.Atomic(Data.Safe(root,"gamedata/config/fonts.ltx"),Data.Legacy.GetBytes(font));
+  Check(!GameFonts.LightAvailable(game),"light atlas not available before the patch");
+  foreach(string r in new[]{"800","1024","1600"})foreach(string ext in new[]{"dds","ini"})Data.Atomic(Data.Safe(root,"gamedata/textures/ui/ui_font_letter_25r_"+r+"."+ext),new byte[]{0});
+  Check(GameFonts.LightAvailable(game),"light atlas detected");
+  GameFonts.Save(game,"largest");Check(game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25r_1024") && !game.ReadConfig("gamedata/config/fonts.ltx").Contains("letter_25_1024"),"largest preset uses the light atlas when available");
+  Check(GameFonts.Transform("texture = ui\\ui_font_letter_25_1024\r\ntexture800 = ui\\ui_font_letter_18_800\r\n","large",true)=="texture = ui\\ui_font_letter_25r_1024\r\ntexture800 = ui\\ui_font_letter_25r_800\r\n","light preset replaces letterica25 and letterica18 atlases");
+  Check(GameFonts.Transform("texture = ui\\ui_font_letter_25_1024\r\n","large",false)=="texture = ui\\ui_font_letter_25_1024\r\n","without the light atlas letterica25 stays untouched");
+  GameFonts.Save(game,"original");Check(game.ReadConfig("gamedata/config/fonts.ltx")==font,"font restore after light preset preserves exact original bytes");
+  // 1.5: UI scale preset — alternative window layouts from gamedata/config/ui_large
+  Check(!GameUiScale.Available(game) && GameUiScale.Current(game)=="original","ui scale unavailable before the patch");
+  Reject(()=>GameUiScale.Save(game,"large"),"ui scale refuses without the shipped layouts");
+  byte[] small=Data.Legacy.GetBytes("<w cell=\"19\"/>\r\n"),big=Data.Legacy.GetBytes("<w cell=\"25\"/>\r\n");
+  foreach(string n in new[]{"inventory_new.xml","trade.xml"}){Data.Atomic(Data.Safe(root,"gamedata/config/ui/"+n),small);Data.Atomic(Data.Safe(root,"gamedata/config/ui_large/"+n),big);}
+  Check(GameUiScale.Available(game) && GameUiScale.Files(game).Count==2,"ui scale layouts detected");
+  GameUiScale.Save(game,"original");Check(!File.Exists(Data.Safe(root,GameUiScale.StatePath)),"ui scale original without state is a no-op");
+  GameUiScale.Save(game,"large");
+  Check(Data.Hash(File.ReadAllBytes(Data.Safe(root,"gamedata/config/ui/trade.xml")))==Data.Hash(big) && Data.Hash(File.ReadAllBytes(Data.Safe(root,"gamedata/config/ui/inventory_new.xml")))==Data.Hash(big),"large ui preset copies the shipped layouts");
+  Check(GameUiScale.Current(game)=="large" && Data.Hash(File.ReadAllBytes(Data.Safe(root,GameUiScale.BackupDir+"/trade.xml")))==Data.Hash(small),"large ui preset recognised and originals backed up");
+  GameUiScale.Save(game,"large");Check(Data.Hash(File.ReadAllBytes(Data.Safe(root,GameUiScale.BackupDir+"/trade.xml")))==Data.Hash(small),"re-applying the preset keeps the first backup");
+  GameUiScale.Save(game,"original");Check(Data.Hash(File.ReadAllBytes(Data.Safe(root,"gamedata/config/ui/trade.xml")))==Data.Hash(small) && GameUiScale.Current(game)=="original","ui scale restore preserves exact original bytes");
+  GameUiScale.Save(game,"large");Data.Atomic(Data.Safe(root,"gamedata/config/ui/trade.xml"),Data.Legacy.GetBytes("manual"));
+  Check(GameUiScale.Current(game)=="custom","external edit of a layout reported as custom");
+  Reject(()=>GameUiScale.Save(game,"original"),"ui scale refuses to overwrite external edits");
+  Data.Atomic(Data.Safe(root,"gamedata/config/ui/trade.xml"),big);GameUiScale.Save(game,"original");
+  Check(Data.Hash(File.ReadAllBytes(Data.Safe(root,"gamedata/config/ui/trade.xml")))==Data.Hash(small),"ui scale restored after the edit was reverted");
   var launcherAsset=new LauncherAsset{version="1.5.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
   Check(SelfUpdate.IsNewer(launcherAsset),"detect newer launcher version");launcherAsset.version="1.2.0";Check(!SelfUpdate.IsNewer(launcherAsset),"never downgrade launcher");
   Check(!SelfUpdate.IsNewer(null),"older catalog without launcher field remains compatible");launcherAsset.version="invalid";Reject(()=>SelfUpdate.IsNewer(launcherAsset),"reject malformed launcher version");

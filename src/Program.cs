@@ -30,10 +30,10 @@ namespace ReFix {
  public class MainForm:Form {
   static readonly Color Bg=Color.FromArgb(19,23,23), Card=Color.FromArgb(29,35,34), Gold=Color.FromArgb(204,173,100), Ink=Color.FromArgb(229,233,225), Muted=Color.FromArgb(163,175,166);
   Panel page; Label status,location,version; TextBox notes;
-  Button update,install,verify,fontSave,selfUpdate,play,addonsButton,save,choose,refresh;
+  Button update,install,verify,fontSave,uiSave,selfUpdate,play,addonsButton,save,choose,refresh;
   bool selfAvailable;
   InstallationReport installation;
-  ComboBox fontSize;
+  ComboBox fontSize,uiScale;
   PreparedPatch prepared;
   GameService game; Catalog catalog; bool busy; string initialRoot;
   ComboBox season,render,resolution,texture,aniso;CheckBox minimal,newHud,fullscreen,vsync;
@@ -121,8 +121,12 @@ namespace ReFix {
    grass=Number(20,60,5,30);Row(table,"Шаг травы (меньше — гуще)",grass);
    gamma=Number(0.5m,1.5m,0.05m,1,2);Row(table,"Гамма",gamma);
    fontSize=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Очень крупный","largest"),new Choice("Изменён вне лаунчера","custom"));Row(table,"Текст интерфейса игры",fontSize);
-   f.Controls.Add(Label("Размер текста Arial/Letterica: диалоги, КПК и другие окна с этими шрифтами. После перезапуска игры. Крупный текст может не помещаться в отдельных окнах.",10,Muted));
+   f.Controls.Add(Label("Размер текста Arial/Letterica: диалоги, КПК и другие окна с этими шрифтами. После перезапуска игры. Крупный текст может не помещаться в отдельных окнах. С патчем от 15.10.2026 крупный текст не жирный.",10,Muted));
    fontSave=Button("Применить размер текста",280);fontSave.Click+=async(s,e)=>await Run(async()=>{string preset=Selected(fontSize);await Task.Run(()=>GameFonts.Save(game,preset));status.Text="Размер текста сохранён. Перезапустите игру.";});f.Controls.Add(fontSave);
+   var ui=SettingsTable(f);
+   uiScale=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Изменён вне лаунчера","custom"));Row(ui,"Масштаб интерфейса",uiScale);
+   f.Controls.Add(Label("Крупный: больше иконки предметов в инвентаре, торговле, ящиках и трупах, крупнее пункты главного меню. За раз видно меньше ячеек, списки прокручиваются. После перезапуска игры. Нужен патч от 15.10.2026.",10,Muted));
+   uiSave=Button("Применить масштаб интерфейса",280);uiSave.Click+=async(s,e)=>await Run(async()=>{string preset=Selected(uiScale);await Task.Run(()=>GameUiScale.Save(game,preset));status.Text="Масштаб интерфейса сохранён. Перезапустите игру.";});f.Controls.Add(uiSave);
    f.Controls.Add(Label("Персонаж",17,Gold));var actor=SettingsTable(f);
    weight=Number(1,10000,10,30);maximum=Number(1,10000,10,60);speed=Number(0.25m,5,0.05m,1,2);
    Row(actor,"Комфортный вес, кг",weight);Row(actor,"Предельный вес, кг",maximum);Row(actor,"Скорость, × от исходной",speed);
@@ -145,7 +149,7 @@ namespace ReFix {
     fullscreen.Checked=(Config.Value(u,"rs_fullscreen")??"on")=="on";vsync.Checked=Config.Value(u,"rs_v_sync")=="on";
     SetNumber(distance,ReadNumber(u,"rs_vis_distance",1)*100);SetNumber(grass,ReadNumber(u,"r__detail_density",0.3m)*100);SetNumber(gamma,ReadNumber(u,"rs_c_gamma",1));
     SetNumber(weight,ReadNumber(l,"max_weight",30,"bz_lord_inventory"));SetNumber(maximum,ReadNumber(l,"max_walk_weight",60,"bz_lord_actor_condition"));SetNumber(speed,ReadNumber(l,"walk_accel",17,"bz_lord_actor")/17);
-    Select(fontSize,GameFonts.Current(game));
+    Select(fontSize,GameFonts.Current(game));Select(uiScale,GameUiScale.Current(game));
     RenderState();status.Text="Папка игры выбрана.";
    }catch(Exception ex){game=null;location.Text="Папка игры не выбрана";Error(ex);}EnableActions();
   }
@@ -158,7 +162,7 @@ namespace ReFix {
    choose.Enabled=!busy;refresh.Enabled=!busy&&game!=null;play.Enabled=!busy&&game!=null;save.Enabled=!busy&&game!=null;addonsButton.Enabled=!busy&&game!=null&&catalog!=null;
    update.Enabled=!busy&&game!=null&&catalog!=null&&(installation==null||installation.PatchHash!=catalog.patch.sha256);
    install.Enabled=!busy&&game!=null&&prepared!=null;
-   verify.Enabled=!busy&&game!=null;fontSave.Enabled=!busy&&game!=null;
+   verify.Enabled=!busy&&game!=null;fontSave.Enabled=!busy&&game!=null;uiSave.Enabled=!busy&&game!=null&&GameUiScale.Available(game);
     selfUpdate.Visible=selfAvailable&&catalog!=null;selfUpdate.Enabled=!busy&&selfAvailable&&catalog!=null;
   }
   async Task Run(Func<Task> action) {
