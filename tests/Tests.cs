@@ -125,7 +125,7 @@ class Tests {
   Reject(()=>GameUiScale.Save(game,"original"),"ui scale refuses to overwrite external edits");
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/trade.xml"),big);GameUiScale.Save(game,"original");
   Check(Data.Hash(File.ReadAllBytes(Data.Safe(root,"gamedata/config/ui/trade.xml")))==Data.Hash(small),"ui scale restored after the edit was reverted");
-  var launcherAsset=new LauncherAsset{version="1.5.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
+  var launcherAsset=new LauncherAsset{version="1.6.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
   Check(SelfUpdate.IsNewer(launcherAsset),"detect newer launcher version");launcherAsset.version="1.2.0";Check(!SelfUpdate.IsNewer(launcherAsset),"never downgrade launcher");
   Check(!SelfUpdate.IsNewer(null),"older catalog without launcher field remains compatible");launcherAsset.version="invalid";Reject(()=>SelfUpdate.IsNewer(launcherAsset),"reject malformed launcher version");
   string selfZip=Data.Safe(root,"self-valid.zip");using(var z=ZipFile.Open(selfZip,ZipArchiveMode.Create)){using(var s=z.CreateEntry("ReFixLauncher.exe").Open()){s.WriteByte(77);s.WriteByte(90);}using(var w=new StreamWriter(z.CreateEntry("ReFixLauncher.exe.config").Open()))w.Write("<configuration/>");}
