@@ -70,6 +70,13 @@ class Tests {
   Check(game.ReadConfig("gamedata/config/bz_lord.ltx").Contains("; личные настройки"),"preserve comments and cp1251");
   Check(Config.Value(game.ReadConfig("userdata/user.ltx"),"renderer")=="renderer_r1","graphics save");
   Reject(()=>game.SaveSettings(graphics,100,50,1),"reject inconsistent weight");
+  Check(Config.Value(game.ReadConfig("gamedata/config/bz_lord.ltx"),"preset","bz_loot")=="mod","loot preset defaults to the mod tables");
+  game.SaveSettings(graphics,5700,6000,1.5m,"scavenger");
+  Check(Config.Value(game.ReadConfig("gamedata/config/bz_lord.ltx"),"preset","bz_loot")=="scavenger" && game.ReadConfig("gamedata/config/bz_lord.ltx").Contains("; личные настройки"),"loot preset written to [bz_loot] without losing comments");
+  game.SaveSettings(graphics,5700,6000,1.5m,"vanilla");
+  string lordText=game.ReadConfig("gamedata/config/bz_lord.ltx");
+  Check(Config.Value(lordText,"preset","bz_loot")=="vanilla" && lordText.Split(new[]{"[bz_loot]"},StringSplitOptions.None).Length==2,"loot preset replaced in place, section not duplicated");
+  Reject(()=>game.SaveSettings(graphics,5700,6000,1.5m,"everything"),"reject unknown loot preset");
   string unknown="bind foo bar\r\nrenderer renderer_r1\r\ncustom 9\r\n";string updated=Config.Set(unknown,"renderer","renderer_r2");
   Check(updated.Contains("bind foo bar")&&updated.Contains("custom 9"),"preserve unrelated settings");
   var known=new System.Collections.Generic.List<InstallProfile>{new InstallProfile{title="Known release",version="test",patchHash="verified",files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}}};
@@ -78,7 +85,7 @@ class Tests {
   Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
   known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
   Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
-  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.15.3" && Installation.Profiles()[0].files.Count==116 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
+  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.15.4" && Installation.Profiles()[0].files.Count==120 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
   // 1.4: reference profiles published in the release catalog, cached for offline checks
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("catalog build"));
   var fresh=new InstallProfile{title="Catalog release",version="2099.1.1.1",patchHash=new string('c',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}};
@@ -129,7 +136,7 @@ class Tests {
   Reject(()=>GameUiScale.Save(game,"original"),"ui scale refuses to overwrite external edits");
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/trade.xml"),big);GameUiScale.Save(game,"original");
   Check(Data.Hash(File.ReadAllBytes(Data.Safe(root,"gamedata/config/ui/trade.xml")))==Data.Hash(small),"ui scale restored after the edit was reverted");
-  var launcherAsset=new LauncherAsset{version="1.6.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
+  var launcherAsset=new LauncherAsset{version="9.9.0",url="https://github.com/"+GameService.Repository+"/releases/download/test/ReFixLauncher.zip",sha256=new string('a',64),bytes=10};
   Check(SelfUpdate.IsNewer(launcherAsset),"detect newer launcher version");launcherAsset.version="1.2.0";Check(!SelfUpdate.IsNewer(launcherAsset),"never downgrade launcher");
   Check(!SelfUpdate.IsNewer(null),"older catalog without launcher field remains compatible");launcherAsset.version="invalid";Reject(()=>SelfUpdate.IsNewer(launcherAsset),"reject malformed launcher version");
   string selfZip=Data.Safe(root,"self-valid.zip");using(var z=ZipFile.Open(selfZip,ZipArchiveMode.Create)){using(var s=z.CreateEntry("ReFixLauncher.exe").Open()){s.WriteByte(77);s.WriteByte(90);}using(var w=new StreamWriter(z.CreateEntry("ReFixLauncher.exe.config").Open()))w.Write("<configuration/>");}

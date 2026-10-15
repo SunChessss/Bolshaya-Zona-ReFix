@@ -37,7 +37,7 @@ namespace ReFix {
   PreparedPatch prepared;
   GameService game; Catalog catalog; bool busy; string initialRoot;
   ComboBox season,render,resolution,texture,aniso;CheckBox minimal,newHud,fullscreen,vsync;
-  NumericUpDown weight,maximum,speed,distance,gamma,grass;
+  NumericUpDown weight,maximum,speed,distance,gamma,grass;ComboBox lootDrop;
   Dictionary<string,Panel> pages=new Dictionary<string,Panel>();
   public MainForm(string root) {
    initialRoot=root;Text="Большая Зона · ReFix";Size=new Size(1080,780);MinimumSize=new Size(960,730);StartPosition=FormStartPosition.CenterScreen;
@@ -131,9 +131,12 @@ namespace ReFix {
    weight=Number(1,10000,10,30);maximum=Number(1,10000,10,60);speed=Number(0.25m,5,0.05m,1,2);
    Row(actor,"Комфортный вес, кг",weight);Row(actor,"Предельный вес, кг",maximum);Row(actor,"Скорость, × от исходной",speed);
    f.Controls.Add(Label("Исходные значения: 30 / 60 кг, скорость 1×. Предельный вес должен быть не меньше комфортного.",10,Muted));
+   var loot=SettingsTable(f);
+   lootDrop=Combo(new Choice("Как в сборке (много)","mod"),new Choice("Уменьшенный","reduced"),new Choice("Как в оригинальном ТЧ","vanilla"),new Choice("Мусорщик (очень мало)","scavenger"));Row(loot,"Дроп лута с трупов NPC",lootDrop);
+   f.Controls.Add(Label("Как в сборке: костюм почти с каждого, патроны и аптечки 77–88%, артефакты. Уменьшенный: примерно вдвое меньше, костюм в 30%, половина денег. Как в оригинальном ТЧ: без артефактов и костюмов, патроны 10–30%, аптечка 10%. Мусорщик: патроны ~25%, костюм 8%, четверть денег. Нужен патч от 15.10.2026 (4); действует после перезапуска, сохранения не ломает.",10,Muted));
    save=Button("Сохранить настройки",240);save.Click+=async(s,e)=>await Run(async()=> {
     var values=new Dictionary<string,string>{{"renderer",Selected(render)},{"vid_mode",Selected(resolution)},{"rs_fullscreen",fullscreen.Checked?"on":"off"},{"rs_v_sync",vsync.Checked?"on":"off"},{"texture_lod",Selected(texture)},{"r__tf_aniso",Selected(aniso)},{"rs_vis_distance",(distance.Value/100).ToString(CultureInfo.InvariantCulture)},{"r__detail_density",(grass.Value/100).ToString(CultureInfo.InvariantCulture)},{"rs_c_gamma",gamma.Value.ToString(CultureInfo.InvariantCulture)}};
-    decimal w=weight.Value,m=maximum.Value,sp=speed.Value;await Task.Run(()=>game.SaveSettings(values,w,m,sp));status.Text="Настройки сохранены. Изменения вступят в силу при запуске игры.";
+    decimal w=weight.Value,m=maximum.Value,sp=speed.Value;string lootPreset=Selected(lootDrop);await Task.Run(()=>game.SaveSettings(values,w,m,sp,lootPreset));status.Text="Настройки сохранены. Изменения вступят в силу при запуске игры.";
    });f.Controls.Add(save);
   }
   static string Selected(ComboBox c){return ((Choice)c.SelectedItem).Value;}
@@ -148,7 +151,7 @@ namespace ReFix {
     Select(render,Config.Value(u,"renderer")??"renderer_r1");Select(resolution,Config.Value(u,"vid_mode")??"1920x1080");Select(texture,Config.Value(u,"texture_lod")??"0");Select(aniso,Config.Value(u,"r__tf_aniso")??"4");
     fullscreen.Checked=(Config.Value(u,"rs_fullscreen")??"on")=="on";vsync.Checked=Config.Value(u,"rs_v_sync")=="on";
     SetNumber(distance,ReadNumber(u,"rs_vis_distance",1)*100);SetNumber(grass,ReadNumber(u,"r__detail_density",0.3m)*100);SetNumber(gamma,ReadNumber(u,"rs_c_gamma",1));
-    SetNumber(weight,ReadNumber(l,"max_weight",30,"bz_lord_inventory"));SetNumber(maximum,ReadNumber(l,"max_walk_weight",60,"bz_lord_actor_condition"));SetNumber(speed,ReadNumber(l,"walk_accel",17,"bz_lord_actor")/17);
+    Select(lootDrop,Config.Value(l,"preset","bz_loot")??"mod");SetNumber(weight,ReadNumber(l,"max_weight",30,"bz_lord_inventory"));SetNumber(maximum,ReadNumber(l,"max_walk_weight",60,"bz_lord_actor_condition"));SetNumber(speed,ReadNumber(l,"walk_accel",17,"bz_lord_actor")/17);
     Select(fontSize,GameFonts.Current(game));Select(uiScale,GameUiScale.Current(game));
     RenderState();status.Text="Папка игры выбрана.";
    }catch(Exception ex){game=null;location.Text="Папка игры не выбрана";Error(ex);}EnableActions();

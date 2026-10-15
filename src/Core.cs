@@ -281,14 +281,18 @@ namespace ReFix {
    string f=ReadConfig("fsgame.ltx");
    if(!Regex.IsMatch(f,@"(?im)^\s*\$app_data_root\$\s*=\s*true\s*\|\s*false\s*\|\s*\$fs_root\$\s*\|\s*userdata\\?\s*$"))throw new IOException("Ожидается штатная папка userdata сборки. Проверьте fsgame.ltx.");
   }
-  public void SaveSettings(Dictionary<string,string> graphics,decimal weight,decimal maximum,decimal speed) {
+  // 1.6: пресет дропа лута с трупов NPC — [bz_loot] preset в bz_lord.ltx (читается скриптом death_manager при загрузке игры).
+  public static readonly string[] LootPresets={"mod","reduced","vanilla","scavenger"};
+  public void SaveSettings(Dictionary<string,string> graphics,decimal weight,decimal maximum,decimal speed,string loot="mod") {
    EnsureStopped();CheckUserdata();
    if(weight<1 || maximum<weight || maximum>10000 || speed<0.25m || speed>5)throw new ArgumentException("Проверьте вес и скорость: предел должен быть не меньше комфортного веса.");
+   if(Array.IndexOf(LootPresets,loot)<0)throw new ArgumentException("Неизвестный пресет дропа лута: "+loot);
    string user=ReadConfig("userdata/user.ltx"), lord=ReadConfig("gamedata/config/bz_lord.ltx");
    foreach(var p in graphics) user=Config.Set(user,p.Key,p.Value);
    lord=Config.Set(lord,"walk_accel",(17m*speed).ToString("0.##",CultureInfo.InvariantCulture),"bz_lord_actor");
    lord=Config.Set(lord,"max_walk_weight",maximum.ToString(CultureInfo.InvariantCulture),"bz_lord_actor_condition");
    lord=Config.Set(lord,"max_weight",weight.ToString(CultureInfo.InvariantCulture),"bz_lord_inventory");
+   lord=Config.Set(lord,"preset",loot,"bz_loot");
    using(var tx=new Transaction(Root)) {tx.Put("userdata/user.ltx",Data.Legacy.GetBytes(user));tx.Put("gamedata/config/bz_lord.ltx",Data.Legacy.GetBytes(lord));tx.Commit();}
   }
   public void Launch() {EnsureStopped();Process.Start(new ProcessStartInfo(Data.Safe(Root,"bin/XR_3DA.exe"),"-fsltx fsgame.ltx"){WorkingDirectory=Root,UseShellExecute=true});}
