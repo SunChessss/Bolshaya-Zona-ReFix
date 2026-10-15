@@ -2,7 +2,7 @@
   {
     "version": "2026.10.15.2",
     "title": "ReFix 15.10.2026 (2) — интерфейс и торговля",
-    "patchHash": "9f231441caeaccff5dacbcd3db764193d8411f3bf84046e4e72885bf21777166",
+    "patchHash": "4619c853ae7b60f10c324222d794d5bc926ef9e15438f8314eaef88b76366c2d",
     "files": [
       {
         "file": "bin/xrGame.dll",
@@ -262,7 +262,7 @@
       {
         "file": "gamedata/config/ui_large/ui_mm_main.xml",
         "bytes": 4858,
-        "sha256": "97e2978c43ce97df79391982dbd43239564900850b58bb67ecd927d85b9f53bc"
+        "sha256": "33a39938461ea647544a1e30ddb860f73134568652e00531615f544fdf57f005"
       },
       {
         "file": "gamedata/config/weapons/sr25_mk11_mod0_sk1_ral.ltx",
