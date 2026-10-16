@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -85,7 +85,7 @@ class Tests {
   Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
   known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
   Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
-  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.15.4" && Installation.Profiles()[0].files.Count==120 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
+  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.16.2" && Installation.Profiles()[0].files.Count==134 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
   // 1.4: reference profiles published in the release catalog, cached for offline checks
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("catalog build"));
   var fresh=new InstallProfile{title="Catalog release",version="2099.1.1.1",patchHash=new string('c',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}};
@@ -143,6 +143,29 @@ class Tests {
   Check(SelfUpdate.ReadPackage(selfZip).Count==2,"accept launcher-only package");
   using(var z=ZipFile.Open(selfZip,ZipArchiveMode.Update)){using(var w=new StreamWriter(z.CreateEntry("../escape.exe").Open()))w.Write("bad");}
   Reject(()=>SelfUpdate.ReadPackage(selfZip),"reject extra files and traversal in self-update");
+  // 1.7: game folder normalisation (self-update passed "D:\\X\\" which the command line turned into D:\X")
+  Check(Data.Root(root+"\\")==root && Data.Root(root+"\\\"")==root && Data.Root(" "+root+" ")==root,"root path normalised (trailing separator and stray quote)");
+  Check(Data.Root("C:\\")=="C:\\","drive root keeps its separator");
+  Check(new GameService(root+"\\").Root==root,"game service strips the trailing separator");
+  // 1.7: add-on hashes are stored in state.json and verification does not need the archive
+  string base17=game.ReadConfig("gamedata/config/ui/test.xml");string baseHash17=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"));
+  string addon17=Package("addon17",new Dictionary<string,string>{{"gamedata/config/ui/test.xml","addon17"},{"gamedata/textures/t.dds","dds"}});
+  game.ApplyAddons(new Dictionary<string,string>{{"optional_textures",addon17}});
+  Check(game.State.addons[0].files!=null && game.State.addons[0].files.Count==2 && game.State.addons[0].files["gamedata/textures/t.dds"]==Data.Hash(Encoding.UTF8.GetBytes("dds")),"addon file hashes kept in state");
+  string moved=Data.Safe(root,".refix-launcher/cache/addon17.zip");File.Move(moved,moved+".away");
+  var profile=new InstallProfile{title="t",patchHash=new string('b',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=baseHash17}}};
+  var report=Installation.Verify(root,game.State,new List<InstallProfile>{profile});
+  Check(report.Differences.Count==0,"verification of an installed addon works without its archive");
+  Data.Atomic(Data.Safe(root,"gamedata/textures/t.dds"),Encoding.UTF8.GetBytes("changed"));
+  Check(Installation.Verify(root,game.State,new List<InstallProfile>{profile}).Differences.Count==1,"modified addon file reported");
+  File.Move(moved+".away",moved);game.ApplyAddons(new Dictionary<string,string>());
+  Check(game.ReadConfig("gamedata/config/ui/test.xml")==base17 && !File.Exists(Data.Safe(root,"gamedata/textures/t.dds")),"textures addon removable");
+  game.Decline("optional_textures");game.LoadState();
+  Check(game.State.declined.Contains("optional_textures"),"declined offer is remembered in state.json");
+  game.Decline("optional_textures");Check(game.State.declined.Count==1,"decline is idempotent");
+  // 1.7: streaming package reader
+  var pkg=ReFix.Package.Load(Data.Safe(root,addon17),true);
+  using(var reader=pkg.Open())Check(Encoding.UTF8.GetString(reader.Read("gamedata/textures/t.dds"))=="dds","package reader returns verified entry");
   Console.WriteLine("TOTAL "+count+" passed. Fixture: "+root);
  }
 }

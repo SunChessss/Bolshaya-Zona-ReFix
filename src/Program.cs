@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
@@ -18,6 +18,7 @@ namespace ReFix {
     Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
     Application.ThreadException+=(s,e)=>MessageBox.Show(e.Exception.Message,"ReFix",MessageBoxButtons.OK,MessageBoxIcon.Warning);
     string root=args.Length==2 && args[0]=="--game"?args[1]:AppDomain.CurrentDomain.BaseDirectory;
+    try{root=Data.Root(root);}catch{}   // 1.7: "--game \"D:\\X\\\"" from an older launcher arrives as D:\X" - strip it
     Application.Run(new MainForm(root));
    }
   }
@@ -36,7 +37,8 @@ namespace ReFix {
   ComboBox fontSize,uiScale;
   PreparedPatch prepared;
   GameService game; Catalog catalog; bool busy; string initialRoot;
-  ComboBox season,render,resolution,texture,aniso;CheckBox minimal,newHud,fullscreen,vsync;
+  ComboBox season,render,resolution,texture,aniso;CheckBox minimal,newHud,textures,fullscreen,vsync;
+  public const string TexturesAddon="optional_textures";   // 1.7: offered automatically after the update check
   NumericUpDown weight,maximum,speed,distance,gamma,grass;ComboBox lootDrop;
   Dictionary<string,Panel> pages=new Dictionary<string,Panel>();
   public MainForm(string root) {
@@ -98,10 +100,13 @@ namespace ReFix {
    f.Controls.Add(new Panel{Height=18});f.Controls.Add(Label("Интерфейс",16,Gold));
    minimal=new CheckBox{Text="Минималистичный HUD",AutoSize=true,Margin=new Padding(0,4,0,18)};
    newHud=new CheckBox{Text="Адаптация Adm-RAL NEW HUD",AutoSize=true,Margin=new Padding(0,4,0,18)};f.Controls.Add(minimal);f.Controls.Add(newHud);
+   f.Controls.Add(Label("Производительность",16,Gold));
+   textures=new CheckBox{Text="Оптимизация текстур — меньше фризов при появлении NPC у баз (около 1,4 ГБ)",AutoSize=true,Margin=new Padding(0,4,0,18)};f.Controls.Add(textures);
+   f.Controls.Add(Label("Текстуры NPC, оружия и техники приведены к размерам степени двойки с полными мип-уровнями и картами рельефа: движок больше не пересчитывает их при загрузке (фризы 1–3 с). Предлагается автоматически после проверки обновлений.",11,Muted));
    f.Controls.Add(Label("Снятие отметки восстанавливает файлы, которые были до установки дополнения через лаунчер. Весна и осень устанавливаются по очереди.",11,Muted));
    addonsButton=Button("Применить дополнения",260);addonsButton.Click+=async(s,e)=>await Run(async()=> {
     if(catalog==null)throw new IOException("Сначала проверьте обновления — нужен каталог дополнений.");
-    var ids=new List<string>();string seasonId=Selected(season);if(seasonId!="")ids.Add(seasonId);if(minimal.Checked)ids.Add("optional_minimal_hud");if(newHud.Checked)ids.Add("optional_new_hud");
+    var ids=new List<string>();string seasonId=Selected(season);if(seasonId!="")ids.Add(seasonId);if(minimal.Checked)ids.Add("optional_minimal_hud");if(newHud.Checked)ids.Add("optional_new_hud");if(textures.Checked)ids.Add(TexturesAddon);
     var selected=new Dictionary<string,string>();foreach(string id in ids){var asset=catalog.addons.FirstOrDefault(a=>a.id==id);if(asset==null)throw new IOException("Дополнение пока не опубликовано: "+id);selected[id]=await game.Download(asset);}
     status.Text="Установка дополнений…";await Task.Run(()=>game.ApplyAddons(selected));RenderState();status.Text="Выбранные дополнения применены.";
    });f.Controls.Add(addonsButton);
@@ -159,7 +164,7 @@ namespace ReFix {
   void RenderState() {
    version.Text=installation==null?"Версия: проверка файлов…":installation.Title;
    if(catalog!=null)version.Text+="  ·  доступны: "+catalog.version;
-   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.Contains("optional_season_spring")?"optional_season_spring":ids.Contains("optional_season_autumn")?"optional_season_autumn":"");minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");
+   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.Contains("optional_season_spring")?"optional_season_spring":ids.Contains("optional_season_autumn")?"optional_season_autumn":"");minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");textures.Checked=ids.Contains(TexturesAddon);
   }
   void EnableActions() {
    choose.Enabled=!busy;refresh.Enabled=!busy&&game!=null;play.Enabled=!busy&&game!=null;save.Enabled=!busy&&game!=null;addonsButton.Enabled=!busy&&game!=null&&catalog!=null;
@@ -178,6 +183,20 @@ namespace ReFix {
    try {await Inspect();RenderState();status.Text="Проверка обновлений на GitHub…";catalog=await game.Check();if(catalog.profiles!=null&&catalog.profiles.Count>0)await Inspect();selfAvailable=SelfUpdate.IsNewer(catalog.launcher);selfUpdate.Text=selfAvailable?"Обновить лаунчер до "+catalog.launcher.version:"Обновить лаунчер";notes.Text=(catalog.notes??"").Replace("\n","\r\n");RenderState();status.Text=selfAvailable?"Доступна новая версия лаунчера. Нажмите «Обновить лаунчер».":installation.PatchHash==catalog.patch.sha256?"Установлена актуальная версия, файлы проверены.":"Доступен пакет исправлений. Нажмите «Скачать обновление».";}
    catch(Exception ex) {catalog=null;status.Text=installation==null?"Не удалось проверить установленные файлы.":"Не удалось проверить обновления. Можно играть с текущими файлами.";notes.Text=installation==null?ex.Message:"Сервер обновлений временно недоступен или релиз ещё не опубликован.\r\nЛокальная проверка: "+installation.Title+"\r\n\r\nИгра и сохранённые настройки доступны без сети.";}
    finally {busy=false;EnableActions();}
+   if(catalog!=null && !selfAvailable)await OfferTextures();
+  }
+  // 1.7: the textures add-on is offered once; a refusal is remembered in state.json (declined), the checkbox stays available.
+  async Task OfferTextures() {
+   if(busy || game==null || catalog==null)return;
+   var asset=catalog.addons.FirstOrDefault(a=>a.id==TexturesAddon);if(asset==null)return;
+   if(game.State.addons.Any(a=>a.id==TexturesAddon) || (game.State.declined!=null && game.State.declined.Contains(TexturesAddon)))return;
+   var answer=MessageBox.Show(this,"Доступно дополнение «Оптимизация текстур» ("+(asset.bytes/1048576)+" МБ для скачивания, около 1,4 ГБ на диске).\n\nТекстуры NPC, оружия и техники приведены к размерам степени двойки с полными мип-уровнями и картами рельефа — движок перестаёт пересчитывать их при загрузке, исчезают фризы 1–3 с при появлении NPC у баз.\n\nСкачать и установить сейчас? Отказ запоминается; включить можно позже на вкладке «Дополнения».","ReFix — дополнение",MessageBoxButtons.YesNo,MessageBoxIcon.Question);
+   if(answer!=DialogResult.Yes){try{game.Decline(TexturesAddon);}catch(Exception ex){Error(ex);}return;}
+   await Run(async()=> {
+    var ids=game.State.addons.Select(a=>a.id).ToList();if(!ids.Contains(TexturesAddon))ids.Add(TexturesAddon);
+    var selected=new Dictionary<string,string>();foreach(string id in ids){var a2=catalog.addons.FirstOrDefault(a=>a.id==id);if(a2==null)throw new IOException("Дополнение пока не опубликовано: "+id);selected[id]=await game.Download(a2);}
+    status.Text="Установка дополнений…";await Task.Run(()=>game.ApplyAddons(selected));await Inspect();RenderState();status.Text="Дополнение «Оптимизация текстур» установлено.";
+   });
   }
   async Task Inspect() {status.Text="Проверка установленных файлов…";var profiles=Installation.Profiles(game.Root,catalog);installation=await Task.Run(()=>Installation.Verify(game,profiles));game.Log("INSTALLATION_CHECK",installation.Title+"; differences="+installation.Differences.Count);}
   async Task UpdateLauncher() {

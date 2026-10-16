@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace ReFix {
  public class SelfUpdateJob {public string root;public string game;public int parent;public long started;public string exeHash;public string configHash;}
  public static class SelfUpdate {
-  public const string VersionString="1.6.0";
+  public const string VersionString="1.7.0";
   public static bool IsNewer(LauncherAsset asset) {
    if(asset==null)return false;
    Version version;if(!Version.TryParse(asset.version,out version))throw new InvalidDataException("Неверная версия лаунчера в каталоге.");
@@ -49,7 +49,7 @@ namespace ReFix {
    Data.Atomic(Path.Combine(dir,"next.exe"),files["ReFixLauncher.exe"]);Data.Atomic(Path.Combine(dir,"next.config"),files["ReFixLauncher.exe.config"]);
    File.Copy(Path.Combine(root,"ReFixLauncher.exe"),Path.Combine(dir,"apply.exe"));File.Copy(Path.Combine(root,"ReFixLauncher.exe.config"),Path.Combine(dir,"apply.exe.config"));
    var parent=Process.GetCurrentProcess();
-   Data.WriteJson(Path.Combine(dir,"job.json"),new SelfUpdateJob{root=Path.GetFullPath(root),game=game,parent=parent.Id,started=parent.StartTime.ToUniversalTime().Ticks,exeHash=Data.Hash(files["ReFixLauncher.exe"]),configHash=Data.Hash(files["ReFixLauncher.exe.config"])});
+   Data.WriteJson(Path.Combine(dir,"job.json"),new SelfUpdateJob{root=Data.Root(root),game=Data.Root(game),parent=parent.Id,started=parent.StartTime.ToUniversalTime().Ticks,exeHash=Data.Hash(files["ReFixLauncher.exe"]),configHash=Data.Hash(files["ReFixLauncher.exe.config"])});
    OperationLog.Write(root,"SELF_DOWNLOAD_VERIFIED",asset.version);return Path.Combine(dir,"job.json");
   }
   public static void Begin(string job) {

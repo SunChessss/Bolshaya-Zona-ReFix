@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,15 +45,17 @@ namespace ReFix {
     string path=Data.Safe(root,file);hashes[file]=File.Exists(path)?Data.HashFile(path):null;
    }
    // Check the stored base beneath managed add-ons, and verify the visible overlay too.
-   var overlays=new Dictionary<string,byte[]>(StringComparer.OrdinalIgnoreCase);
+   var overlays=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
    foreach(var addon in state.addons) {
-    foreach(var file in Package.Load(Data.Safe(root,addon.archive),true).Files)overlays[file.Key]=file.Value;
+    // 1.7: hashes of the add-on files are kept in state.json; archives of older installs are read (manifest only)
+    var files=addon.files!=null && addon.files.Count>0?addon.files:Package.Load(Data.Safe(root,addon.archive),true,false).Hashes();
+    foreach(var file in files)overlays[file.Key]=file.Value;
     foreach(var original in addon.originals)if(hashes.ContainsKey(original.Key)) {
      string backup=original.Value==null?null:Data.Safe(root,original.Value);
      hashes[original.Key]=backup!=null && File.Exists(backup)?Data.HashFile(backup):null;
     }
    }
-   var overlayErrors=overlays.Where(p=>!File.Exists(Data.Safe(root,p.Key)) || Data.HashFile(Data.Safe(root,p.Key))!=Data.Hash(p.Value)).Select(p=>"Дополнение изменено или отсутствует: "+p.Key).ToList();
+   var overlayErrors=overlays.Where(p=>!File.Exists(Data.Safe(root,p.Key)) || Data.HashFile(Data.Safe(root,p.Key))!=p.Value).Select(p=>"Дополнение изменено или отсутствует: "+p.Key).ToList();
    InstallationReport nearest=null;
    foreach(var profile in profiles) {
     var report=new InstallationReport {Title=profile.title,Checked=hashes.Count};

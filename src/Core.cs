@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -18,8 +18,8 @@ namespace ReFix {
  public class LauncherAsset : Asset {public string version;}
  public class Catalog { public int schema; public string version; public string notes; public Asset patch; public List<Asset> addons; public LauncherAsset launcher; public List<InstallProfile> profiles; }
  public class FileRow { public string file; public long bytes; public string sha256; }
- public class ActiveAddon { public string id; public string archive; public Dictionary<string,string> originals = new Dictionary<string,string>(); }
- public class LocalState { public string version = "Не определена"; public string patchHash = ""; public List<ActiveAddon> addons = new List<ActiveAddon>(); }
+ public class ActiveAddon { public string id; public string archive; public Dictionary<string,string> originals = new Dictionary<string,string>(); public Dictionary<string,string> files = new Dictionary<string,string>(); }   // 1.7: files = sha256 of the addon files (verify without reading the archive)
+ public class LocalState { public string version = "Не определена"; public string patchHash = ""; public List<ActiveAddon> addons = new List<ActiveAddon>(); public List<string> declined = new List<string>(); }   // 1.7: declined = add-ons the player refused when offered automatically
  public class Change { public string path; public string backup; }
  public class Journal { public string status = "pending"; public List<Change> changes = new List<Change>(); }
  public static class OperationLog {
@@ -46,6 +46,13 @@ namespace ReFix {
   public static T Read<T>(string text) { return new JavaScriptSerializer { MaxJsonLength = 16000000 }.Deserialize<T>(text); }
   public static string Hash(byte[] bytes) { using(var h=SHA256.Create()) return BitConverter.ToString(h.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant(); }
   public static string HashFile(string path) { using(var f=File.OpenRead(path)) using(var h=SHA256.Create()) return BitConverter.ToString(h.ComputeHash(f)).Replace("-", "").ToLowerInvariant(); }
+  // 1.7: a root without the trailing separator ("D:\\Games\\X\\" -> "D:\\Games\\X"); "D:\\" stays. A trailing
+  // backslash before the closing quote of --game "..." was read as an escaped quote and the launcher lost its game folder.
+  public static string Root(string path) {
+   string full=Path.GetFullPath(path.Trim().TrimEnd('"'));
+   string trimmed=full.TrimEnd(Path.DirectorySeparatorChar,Path.AltDirectorySeparatorChar);
+   return trimmed.EndsWith(":")?trimmed+Path.DirectorySeparatorChar:trimmed;
+  }
   public static string Safe(string root, string relative) {
    if(String.IsNullOrWhiteSpace(relative) || relative.Contains("\\") || relative.Contains(":") || relative.StartsWith("/") || relative.Split('/').Any(p=>p==".." || p=="." || p.Length==0 || p.EndsWith(".") || p.EndsWith(" ")))
     throw new InvalidDataException("Недопустимый путь: " + relative);
@@ -105,10 +112,14 @@ namespace ReFix {
   }
  }
 
+ // 1.7: packages are validated by streaming (hashes of every entry) and read file by file while applying, so a
+ // 1.4 GB add-on (textures) does not have to sit in memory. Rows = manifest (file -> bytes/sha256) of allowed files.
  public class Package {
-  public Dictionary<string,byte[]> Files = new Dictionary<string,byte[]>(StringComparer.OrdinalIgnoreCase);
-  public static Package Load(string path, bool addon) {
-   var package=new Package();
+  public string Archive;
+  public Dictionary<string,FileRow> Rows = new Dictionary<string,FileRow>(StringComparer.OrdinalIgnoreCase);
+  public static Package Load(string path, bool addon) { return Load(path,addon,true); }
+  public static Package Load(string path, bool addon, bool verifyEntries) {
+   var package=new Package{Archive=path};
    using(var zip=ZipFile.OpenRead(path)) {
     var names=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     foreach(var e in zip.Entries) {
@@ -124,18 +135,31 @@ namespace ReFix {
      if(row.file=="MANIFEST.json" || !expected.Add(row.file) || row.bytes<0 || row.bytes>268435456 || !Regex.IsMatch(row.sha256??"","^[a-f0-9]{64}$")) throw new InvalidDataException("Неверный манифест");
      total+=row.bytes; if(total>2147483648L) throw new InvalidDataException("Пакет слишком велик");
      var entry=zip.GetEntry(row.file); if(entry==null || entry.Length!=row.bytes) throw new InvalidDataException("Размер файла не совпал: "+row.file);
-     byte[] bytes; using(var stream=entry.Open()) using(var mem=new MemoryStream()) { stream.CopyTo(mem);bytes=mem.ToArray(); }
-     if(Data.Hash(bytes)!=row.sha256) throw new InvalidDataException("Контрольная сумма не совпала: "+row.file);
+     if(verifyEntries) { string hash; using(var stream=entry.Open()) using(var h=SHA256.Create()) hash=BitConverter.ToString(h.ComputeHash(stream)).Replace("-","").ToLowerInvariant(); if(hash!=row.sha256) throw new InvalidDataException("Контрольная сумма не совпала: "+row.file); }
      string n=row.file.ToLowerInvariant();
      bool allowed=n.StartsWith("gamedata/") || (!addon && n.StartsWith("bin/") && (n.EndsWith(".dll")||n.EndsWith(".exe")));
      if(n=="gamedata/config/bz_lord.ltx") continue;
-     if(allowed) package.Files.Add(row.file,bytes);
+     if(allowed) package.Rows.Add(row.file,row);
      else if(!n.StartsWith("docs/") && !n.EndsWith("readme.txt") && !n.EndsWith("readme.md")) throw new InvalidDataException("Файл не разрешён в пакете: "+row.file);
     }
     expected.Add("MANIFEST.json"); if(!expected.SetEquals(names)) throw new InvalidDataException("Состав пакета не совпал с манифестом");
    }
    return package;
   }
+  public Dictionary<string,string> Hashes() { return Rows.ToDictionary(p=>p.Key,p=>p.Value.sha256,StringComparer.OrdinalIgnoreCase); }
+  public PackageReader Open() { return new PackageReader(this); }
+ }
+ public sealed class PackageReader : IDisposable {
+  readonly Package package; readonly ZipArchive zip;
+  public PackageReader(Package p) { package=p; zip=ZipFile.OpenRead(p.Archive); }
+  public byte[] Read(string file) {
+   FileRow row; if(!package.Rows.TryGetValue(file,out row)) throw new InvalidDataException("Файла нет в пакете: "+file);
+   var entry=zip.GetEntry(row.file); if(entry==null) throw new InvalidDataException("Файла нет в архиве: "+file);
+   byte[] bytes; using(var stream=entry.Open()) using(var mem=new MemoryStream()) { stream.CopyTo(mem);bytes=mem.ToArray(); }
+   if(Data.Hash(bytes)!=row.sha256) throw new InvalidDataException("Контрольная сумма не совпала: "+file);
+   return bytes;
+  }
+  public void Dispose() { zip.Dispose(); }
  }
 
  public static class Config {
@@ -175,7 +199,7 @@ namespace ReFix {
   public Action<string> Progress = delegate{};
   public void Log(string stage,string detail="") {OperationLog.Write(Root,stage,detail);}
   public GameService(string root) {
-   Root=Path.GetFullPath(root);
+   Root=Data.Root(root);
    if(!File.Exists(Data.Safe(Root,"bin/XR_3DA.exe")) || !File.Exists(Data.Safe(Root,"gamedata/config/bz_lord.ltx")) || !File.Exists(Data.Safe(Root,"fsgame.ltx"))) throw new IOException("Выберите корень сборки ReFix: рядом должны быть bin, gamedata и fsgame.ltx.");
    EnsureStopped(); Transaction.Recover(Root); LoadState();
   }
@@ -201,7 +225,7 @@ namespace ReFix {
     var ids=new HashSet<string>();
     foreach(var a in catalog.addons.Concat(new[]{catalog.patch})) {
      ValidateUrl(a.url);
-     if(!Regex.IsMatch(a.sha256??"","^[a-f0-9]{64}$") || a.bytes<=0 || a.bytes>1073741824 || !Regex.IsMatch(a.id??"","^[a-z0-9_-]+$") || !ids.Add(a.id))throw new InvalidDataException("Неверное описание пакета");
+     if(!Regex.IsMatch(a.sha256??"","^[a-f0-9]{64}$") || a.bytes<=0 || a.bytes>2147483648L || !Regex.IsMatch(a.id??"","^[a-z0-9_-]+$") || !ids.Add(a.id))throw new InvalidDataException("Неверное описание пакета");
     }
     Installation.Validate(catalog.profiles);   // 1.4: reference file lists of the builds come with the catalog
     return catalog;
@@ -229,10 +253,10 @@ namespace ReFix {
    string path=Data.Safe(Root,archive);
    if(Data.HashFile(path)!=hash)throw new InvalidDataException("Архив изменился. Скачайте обновление заново.");
    var patch=Package.Load(path,false);
-   var lines=patch.Files.OrderBy(p=>p.Key,StringComparer.OrdinalIgnoreCase).Select(p=>
-    (File.Exists(Data.Safe(Root,p.Key))?(Data.HashFile(Data.Safe(Root,p.Key))==Data.Hash(p.Value)?"Без изменений: ":"Заменить: "):"Добавить: ")+p.Key).ToList();
+   var lines=patch.Rows.OrderBy(p=>p.Key,StringComparer.OrdinalIgnoreCase).Select(p=>
+    (File.Exists(Data.Safe(Root,p.Key))?(Data.HashFile(Data.Safe(Root,p.Key))==p.Value.sha256?"Без изменений: ":"Заменить: "):"Добавить: ")+p.Key).ToList();
    foreach(var a in State.addons)lines.Add("Снять и повторно установить дополнение: "+a.id);
-   OperationLog.Write(Root,"PREVIEW_READY",patch.Files.Count.ToString());
+   OperationLog.Write(Root,"PREVIEW_READY",patch.Rows.Count.ToString());
    return new PreparedPatch {Root=Root,Archive=archive,Version=version,Hash=hash,Changes=lines.ToArray()};
   }
   public void InstallPreparedPatch(PreparedPatch prepared) {
@@ -245,11 +269,13 @@ namespace ReFix {
    foreach(var item in addon.originals) {if(item.Value==null)tx.Remove(item.Key);else tx.Put(item.Key,File.ReadAllBytes(Data.Safe(Root,item.Value)));}
   }
   ActiveAddon Activate(string id,string archive,Package package,Transaction tx) {
-   var active=new ActiveAddon{id=id,archive=archive}; string prefix=".refix-launcher/bases/"+Guid.NewGuid().ToString("N")+"/";
-   foreach(var item in package.Files) {
-    string p=Data.Safe(Root,item.Key);string backup=null;
-    if(File.Exists(p)) {backup=prefix+item.Key;tx.Put(backup,File.ReadAllBytes(p));}
-    active.originals.Add(item.Key,backup);tx.Put(item.Key,item.Value);
+   var active=new ActiveAddon{id=id,archive=archive,files=package.Hashes()}; string prefix=".refix-launcher/bases/"+Guid.NewGuid().ToString("N")+"/";
+   int done=0,total=package.Rows.Count;
+   using(var reader=package.Open()) foreach(var name in package.Rows.Keys.OrderBy(k=>k,StringComparer.OrdinalIgnoreCase)) {
+    string p=Data.Safe(Root,name);string backup=null;
+    if(File.Exists(p)) {backup=prefix+name;tx.Put(backup,File.ReadAllBytes(p));}
+    active.originals.Add(name,backup);tx.Put(name,reader.Read(name));
+    if(++done%50==0 || done==total)Progress("Установка «"+id+"»: "+done+" из "+total);
    }return active;
   }
   public void ApplyPatch(string archive,string version,string hash) {
@@ -258,7 +284,7 @@ namespace ReFix {
    var layers=State.addons.Select(a=>new {a.id,a.archive,package=Package.Load(Data.Safe(Root,a.archive),true)}).ToList();
    using(var tx=new Transaction(Root)) {
     foreach(var a in State.addons.AsEnumerable().Reverse()) Restore(a,tx);
-    foreach(var item in patch.Files) tx.Put(item.Key,item.Value);
+    using(var reader=patch.Open()) foreach(var name in patch.Rows.Keys.OrderBy(k=>k,StringComparer.OrdinalIgnoreCase)) tx.Put(name,reader.Read(name));
     var next=new LocalState {version=version,patchHash=hash};
     foreach(var a in layers) next.addons.Add(Activate(a.id,a.archive,a.package,tx));
     tx.Put(".refix-launcher/state.json",Encoding.UTF8.GetBytes(Data.Json(next)));tx.Commit();State=next;
@@ -268,13 +294,18 @@ namespace ReFix {
   public void ApplyAddons(Dictionary<string,string> selected) {
    EnsureStopped();var packages=selected.ToDictionary(p=>p.Key,p=>Package.Load(Data.Safe(Root,p.Value),true));
    var names=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-   foreach(var p in packages.Values)foreach(string n in p.Files.Keys)if(!names.Add(n))throw new IOException("Выбранные дополнения меняют одни и те же файлы. Установите один вариант.");
+   foreach(var p in packages.Values)foreach(string n in p.Rows.Keys)if(!names.Add(n))throw new IOException("Выбранные дополнения меняют одни и те же файлы. Установите один вариант.");
    using(var tx=new Transaction(Root)) {
     foreach(var a in State.addons.AsEnumerable().Reverse())Restore(a,tx);
     var next=new LocalState {version=State.version,patchHash=State.patchHash};
     foreach(var item in selected)next.addons.Add(Activate(item.Key,item.Value,packages[item.Key],tx));
     tx.Put(".refix-launcher/state.json",Encoding.UTF8.GetBytes(Data.Json(next)));tx.Commit();State=next;
    }
+  }
+  public void Decline(string addonId) {   // 1.7: remember that the automatically offered add-on was refused
+   if(State.declined==null)State.declined=new List<string>();
+   if(State.declined.Contains(addonId))return;
+   State.declined.Add(addonId);Data.WriteJson(Data.Safe(Root,".refix-launcher/state.json"),State);
   }
   public string ReadConfig(string path) {string p=Data.Safe(Root,path);return File.Exists(p)?Data.Legacy.GetString(File.ReadAllBytes(p)):"";}
   public void CheckUserdata() {

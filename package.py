@@ -25,6 +25,7 @@ def main():
     ap.add_argument('--notes-file', type=Path, required=True)
     ap.add_argument('--addons-from', help='tag whose add-on packages are reused (unchanged add-ons)')
     ap.add_argument('--launcher-from', help='tag whose ReFixLauncher.zip is reused (no new launcher)')
+    ap.add_argument('--addon', action='append', default=[], help='new add-on asset: id=path|title|group (copied into the release folder); other add-ons come from --addons-from')
     a = ap.parse_args()
     project = Path(__file__).resolve().parent
     out = project / 'artifacts' / a.tag
@@ -47,8 +48,19 @@ def main():
     assert game == {f['file']: f['sha256'] for f in profiles[0]['files']}, 'profile differs from the Fixes archive'
     if a.addons_from:
         addons = previous(a.addons_from)['addons']
-    else:
+    elif not a.addon:
         raise SystemExit('rebuilding add-ons is not supported here; pass --addons-from')
+    else:
+        addons = []
+    for spec in a.addon:                                   # 1.7: optional_textures=<zip>|<title>|<group>
+        ident, rest = spec.split('=', 1); path, title, group = rest.split('|')
+        src = Path(path)
+        with zipfile.ZipFile(src) as z:
+            rows = json.loads(z.read('MANIFEST.json'))
+            assert set(z.namelist()) == {r['file'] for r in rows} | {'MANIFEST.json'}, 'add-on archive does not match its manifest'
+        dst = out / (ident + '.zip')
+        if not dst.exists() or sha(dst) != sha(src): shutil.copy2(src, dst)
+        addons = [x for x in addons if x['id'] != ident] + [asset(dst, ident, title, group)]
     if a.launcher_from:
         launcher = previous(a.launcher_from)['launcher']
         # Every release carries the same ReFixLauncher.zip, so the permanent link
