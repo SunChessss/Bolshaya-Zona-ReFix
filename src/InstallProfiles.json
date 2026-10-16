@@ -2,7 +2,7 @@
  {
   "version": "2026.10.16.3",
   "title": "ReFix 16.10.2026 (3) — вылеты по логам игроков",
-  "patchHash": "91b7900e538017ef07e25ebd659f1e99bae96a5dbb3aee4a39361cdcfa7e5ccd",
+  "patchHash": "9aacf90712b0868c2c570b8c1812759329c4d7dfdb8c055a3e7a03501b85ffa5",
   "files": [
    {
     "file": "bin/xrGame.dll",
@@ -398,7 +398,7 @@
    },
    {
     "file": "gamedata/scripts/bz_zone_lord.script",
-    "sha256": "af099debf3c9c819973c46db3c47869554e49447ddf9d2c7230f704383987c68"
+    "sha256": "b7483f0e0ede11307a7c8ce5c0b452c359a251d24736e57a4b99277131eb0d74"
    },
    {
     "file": "gamedata/scripts/death_manager.script",
