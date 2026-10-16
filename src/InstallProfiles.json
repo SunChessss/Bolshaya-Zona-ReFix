@@ -2,7 +2,7 @@
  {
   "version": "2026.10.16.3",
   "title": "ReFix 16.10.2026 (3) — вылеты по логам игроков",
-  "patchHash": "9aacf90712b0868c2c570b8c1812759329c4d7dfdb8c055a3e7a03501b85ffa5",
+  "patchHash": "dbeabbedff65836448bf608f28a0c0a6e8571b3da642b79cb197a5f46a1fd257",
   "files": [
    {
     "file": "bin/xrGame.dll",
@@ -271,6 +271,10 @@
    {
     "file": "gamedata/config/weapons/w_fn_fal_c1.ltx",
     "sha256": "9cfb5ef137ea657d9197abdba29955390663af7130c78244098656031eacee63"
+   },
+   {
+    "file": "gamedata/config/weapons/w_igla.ltx",
+    "sha256": "0123f5d57772280b1bbbc2d036b33b76238e12ff779ba6113c3ba5b8bafd8785"
    },
    {
     "file": "gamedata/config/weapons/w_ks23.ltx",
