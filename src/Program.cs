@@ -96,14 +96,14 @@ namespace ReFix {
   }
   void BuildAddons() {
    var f=Flow(NewPage("Дополнения"));f.Controls.Add(Label("Зона на ваш вкус",28,Ink));f.Controls.Add(Label("Загружайте только нужные дополнения. Выбор можно отменить.",11,Muted));
-   f.Controls.Add(Label("Сезон",16,Gold));season=Combo(new Choice("Как было до лаунчера",""),new Choice("Весна","optional_season_spring"),new Choice("Осень — основа сборки","optional_season_autumn"));f.Controls.Add(season);
+   f.Controls.Add(Label("Сезон",16,Gold));season=Combo(new Choice("Как было до лаунчера",""),new Choice("Весна","optional_season_spring"),new Choice("Лето","optional_season_summer"),new Choice("Осень — основа сборки","optional_season_autumn"));f.Controls.Add(season);
    f.Controls.Add(new Panel{Height=18});f.Controls.Add(Label("Интерфейс",16,Gold));
    minimal=new CheckBox{Text="Минималистичный HUD",AutoSize=true,Margin=new Padding(0,4,0,18)};
    newHud=new CheckBox{Text="Адаптация Adm-RAL NEW HUD",AutoSize=true,Margin=new Padding(0,4,0,18)};f.Controls.Add(minimal);f.Controls.Add(newHud);
    f.Controls.Add(Label("Производительность",16,Gold));
    textures=new CheckBox{Text="Оптимизация текстур — меньше фризов при появлении NPC у баз (около 1,4 ГБ)",AutoSize=true,Margin=new Padding(0,4,0,18)};f.Controls.Add(textures);
    f.Controls.Add(Label("Текстуры NPC, оружия и техники приведены к размерам степени двойки с полными мип-уровнями и картами рельефа: движок больше не пересчитывает их при загрузке (фризы 1–3 с). Предлагается автоматически после проверки обновлений.",11,Muted));
-   f.Controls.Add(Label("Снятие отметки восстанавливает файлы, которые были до установки дополнения через лаунчер. Весна и осень устанавливаются по очереди.",11,Muted));
+   f.Controls.Add(Label("Снятие отметки восстанавливает файлы, которые были до установки дополнения через лаунчер. Сезоны (весна, лето, осень) устанавливаются по очереди: выбор одного снимает другой.",11,Muted));
    addonsButton=Button("Применить дополнения",260);addonsButton.Click+=async(s,e)=>await Run(async()=> {
     if(catalog==null)throw new IOException("Сначала проверьте обновления — нужен каталог дополнений.");
     var ids=new List<string>();string seasonId=Selected(season);if(seasonId!="")ids.Add(seasonId);if(minimal.Checked)ids.Add("optional_minimal_hud");if(newHud.Checked)ids.Add("optional_new_hud");if(textures.Checked)ids.Add(TexturesAddon);
@@ -164,7 +164,7 @@ namespace ReFix {
   void RenderState() {
    version.Text=installation==null?"Версия: проверка файлов…":installation.Title;
    if(catalog!=null)version.Text+="  ·  доступны: "+catalog.version;
-   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.Contains("optional_season_spring")?"optional_season_spring":ids.Contains("optional_season_autumn")?"optional_season_autumn":"");minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");textures.Checked=ids.Contains(TexturesAddon);
+   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.FirstOrDefault(id=>id.StartsWith("optional_season_"))??"");minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");textures.Checked=ids.Contains(TexturesAddon);
   }
   void EnableActions() {
    choose.Enabled=!busy;refresh.Enabled=!busy&&game!=null;play.Enabled=!busy&&game!=null;save.Enabled=!busy&&game!=null;addonsButton.Enabled=!busy&&game!=null&&catalog!=null;
