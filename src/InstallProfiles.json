@@ -2,11 +2,11 @@
  {
   "version": "2026.10.17.1",
   "title": "ReFix 17.10.2026 (1) — перенос пачки по Shift, летняя растительность",
-  "patchHash": "6b04479a0300f28c6fe12eaec9c37da379c7441caf75f1e69126c06ddb02215c",
+  "patchHash": "0c027e16c60d29526d67e6ad8c82967b62b6e1bca5cc38a867111d0d407519ed",
   "files": [
    {
     "file": "bin/xrGame.dll",
-    "sha256": "d84150a38f78f205d4a9b90a32733ae3db582d6f1e4d8858e73e1ff6b7553194"
+    "sha256": "38cd1a1455cf9ed50faff24296bb15df7e02ccdc44c2527f1a68571c285b5d62"
    },
    {
     "file": "gamedata/config/creatures/bz_ps_sidor.ltx",

@@ -16,7 +16,7 @@
 ## Что нового
 
 **2026.10.17.1 + лаунчер 1.8** — перенос всей пачки по Shift, летняя растительность:
-- торговля и обыск: **Shift + двойной клик** по предмету переносит всю пачку этого вида целиком (патроны, аптечки, артефакты…) — в окно продажи/покупки и обратно, из трупа или ящика к себе и от себя; без Shift — по одной штуке, как раньше; перевес останавливает перенос. Правка движка (`bin/xrGame.dll`, `stabilization/tools/patch_xrgame_shift_move.py`), больше в нём ничего не менялось;
+- торговля и обыск: **Shift + клик** по предмету переносит всю пачку этого вида целиком (патроны, аптечки, артефакты…), **Ctrl + клик** — половину пачки; работает в окно продажи/покупки и обратно, из трупа или ящика к себе и от себя; без клавиш — двойной клик переносит одну штуку, как раньше; перевес останавливает перенос. Правка движка (`bin/xrGame.dll`, `stabilization/tools/patch_xrgame_shift_move.py`), больше в нём ничего не менялось;
 - новое дополнение **«Лето»** («Дополнения» → «Сезон»): 178 текстур авторского летнего пака Adm-RAL — трава, деревья и кусты, земля и, в отличие от весны, дальние силуэты деревьев (около 200 МБ). Пакет «Осень — основа сборки» теперь возвращает файлы и весны, и лета. Сезоны ставятся по очереди: выбор одного снимает другой;
 - лаунчер 1.8: пункт «Лето» в выборе сезона. Сохранения совместимы.
 
@@ -126,7 +126,7 @@ python package.py --release-dir C:\path\to\release --version 2026.10.14.4 --tag 
 
 ### 2026.10.17.1 — перенос пачки по Shift, летняя растительность (лаунчер 1.8)
 
-`package.py --version 2026.10.17.1 --tag v2026.10.17.1 --notes-file artifacts/notes-2026.10.17.1.txt --addons-from v2026.10.16.3 --addon "optional_season_summer=../release_final/optional_season_summer.zip|Лето|season" --addon "optional_season_autumn=../release_final/optional_season_autumn.zip|Осень|season"` (новый EXE 1.8.0). Fixes: `bin/xrGame.dll` (патч Shift + двойной клик в `CUITradeWnd`/`CUICarBodyWnd`, `stabilization/tools/patch_xrgame_shift_move.py`, этап 35). Дополнения: `optional_season_summer.zip` (178 файлов), обновлённый `optional_season_autumn.zip` (185 файлов = весна ∪ лето) — `stabilization/tools/package_season_summer.py`. Лаунчер 1.8.0: «Лето» в выборе сезона, выбор сезона из состояния по префиксу `optional_season_`.
+`package.py --version 2026.10.17.1 --tag v2026.10.17.1 --notes-file artifacts/notes-2026.10.17.1.txt --addons-from v2026.10.16.3 --addon "optional_season_summer=../release_final/optional_season_summer.zip|Лето|season" --addon "optional_season_autumn=../release_final/optional_season_autumn.zip|Осень|season"` (новый EXE 1.8.0). Fixes: `bin/xrGame.dll` (патч Shift/Ctrl + клик в `CUITradeWnd`/`CUICarBodyWnd` и `CUIDragDropListEx`, `stabilization/tools/patch_xrgame_shift_move.py`, этап 35). Дополнения: `optional_season_summer.zip` (178 файлов), обновлённый `optional_season_autumn.zip` (185 файлов = весна ∪ лето) — `stabilization/tools/package_season_summer.py`. Лаунчер 1.8.0: «Лето» в выборе сезона, выбор сезона из состояния по префиксу `optional_season_`.
 
 ### 2026.10.16.3 — вылеты по логам игроков
 
