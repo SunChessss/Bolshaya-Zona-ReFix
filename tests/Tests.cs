@@ -154,10 +154,12 @@ class Tests {
   Check(game.State.addons[0].files!=null && game.State.addons[0].files.Count==2 && game.State.addons[0].files["gamedata/textures/t.dds"]==Data.Hash(Encoding.UTF8.GetBytes("dds")),"addon file hashes kept in state");
   string moved=Data.Safe(root,".refix-launcher/cache/addon17.zip");File.Move(moved,moved+".away");
   var profile=new InstallProfile{title="t",patchHash=new string('b',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=baseHash17}}};
-  var report=Installation.Verify(root,game.State,new List<InstallProfile>{profile});
+  var report=Installation.Verify(root,game.State,new List<InstallProfile>{profile},true);
   Check(report.Differences.Count==0,"verification of an installed addon works without its archive");
   Data.Atomic(Data.Safe(root,"gamedata/textures/t.dds"),Encoding.UTF8.GetBytes("changed"));
-  Check(Installation.Verify(root,game.State,new List<InstallProfile>{profile}).Differences.Count==1,"modified addon file reported");
+  Check(Installation.Verify(root,game.State,new List<InstallProfile>{profile},true).Differences.Count==1,"modified addon file reported");
+  Check(Installation.Verify(root,game.State,new List<InstallProfile>{profile}).Differences.Count==0,"1.8: start-up check skips add-on files");
+  Check(Installation.VerifyAddons(root,game.State).Count==1 && Installation.AddonFileCount(game.State)==2,"1.8: add-on files verified separately");
   File.Move(moved+".away",moved);game.ApplyAddons(new Dictionary<string,string>());
   Check(game.ReadConfig("gamedata/config/ui/test.xml")==base17 && !File.Exists(Data.Safe(root,"gamedata/textures/t.dds")),"textures addon removable");
   game.Decline("optional_textures");game.LoadState();

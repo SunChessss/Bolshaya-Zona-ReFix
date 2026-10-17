@@ -39,23 +39,32 @@ namespace ReFix {
   public static InstallationReport Verify(GameService game,List<InstallProfile> profiles) {
    return Verify(game.Root,game.State,profiles);
   }
-  public static InstallationReport Verify(string root,LocalState state,List<InstallProfile> profiles) {
-   var hashes=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
-   foreach(string file in profiles.SelectMany(p=>p.files).Select(r=>r.file).Distinct(StringComparer.OrdinalIgnoreCase)) {
-    string path=Data.Safe(root,file);hashes[file]=File.Exists(path)?Data.HashFile(path):null;
-   }
-   // Check the stored base beneath managed add-ons, and verify the visible overlay too.
+  // 1.8: the add-on overlay (up to 1.4 GB of textures) is no longer hashed on every start; it is checked separately
+  // by VerifyAddons (add-ons page / "Проверить установку"). Verify only looks at the patch files and the stored bases.
+  public static InstallationReport Verify(string root,LocalState state,List<InstallProfile> profiles) { return Verify(root,state,profiles,false); }
+  public static List<string> VerifyAddons(string root,LocalState state) {
    var overlays=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
    foreach(var addon in state.addons) {
     // 1.7: hashes of the add-on files are kept in state.json; archives of older installs are read (manifest only)
     var files=addon.files!=null && addon.files.Count>0?addon.files:Package.Load(Data.Safe(root,addon.archive),true,false).Hashes();
     foreach(var file in files)overlays[file.Key]=file.Value;
+   }
+   return overlays.Where(p=>!File.Exists(Data.Safe(root,p.Key)) || Data.HashFile(Data.Safe(root,p.Key))!=p.Value).Select(p=>"Дополнение изменено или отсутствует: "+p.Key).ToList();
+  }
+  public static int AddonFileCount(LocalState state) { return state.addons.Sum(a=>a.files==null?0:a.files.Count); }
+  public static InstallationReport Verify(string root,LocalState state,List<InstallProfile> profiles,bool withAddons) {
+   var hashes=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+   foreach(string file in profiles.SelectMany(p=>p.files).Select(r=>r.file).Distinct(StringComparer.OrdinalIgnoreCase)) {
+    string path=Data.Safe(root,file);hashes[file]=File.Exists(path)?Data.HashFile(path):null;
+   }
+   // Check the stored base beneath managed add-ons (patch files only); the visible overlay is optional (slow).
+   foreach(var addon in state.addons) {
     foreach(var original in addon.originals)if(hashes.ContainsKey(original.Key)) {
      string backup=original.Value==null?null:Data.Safe(root,original.Value);
      hashes[original.Key]=backup!=null && File.Exists(backup)?Data.HashFile(backup):null;
     }
    }
-   var overlayErrors=overlays.Where(p=>!File.Exists(Data.Safe(root,p.Key)) || Data.HashFile(Data.Safe(root,p.Key))!=p.Value).Select(p=>"Дополнение изменено или отсутствует: "+p.Key).ToList();
+   var overlayErrors=withAddons?VerifyAddons(root,state):new List<string>();
    InstallationReport nearest=null;
    foreach(var profile in profiles) {
     var report=new InstallationReport {Title=profile.title,Checked=hashes.Count};

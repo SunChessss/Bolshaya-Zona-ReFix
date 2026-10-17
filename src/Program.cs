@@ -30,7 +30,7 @@ namespace ReFix {
  }
  public class MainForm:Form {
   static readonly Color Bg=Color.FromArgb(19,23,23), Card=Color.FromArgb(29,35,34), Gold=Color.FromArgb(204,173,100), Ink=Color.FromArgb(229,233,225), Muted=Color.FromArgb(163,175,166);
-  Panel page; Label status,location,version; TextBox notes;
+  Panel page; Label status,location,version,addonsCheck; TextBox notes;
   Button update,install,verify,fontSave,uiSave,selfUpdate,play,addonsButton,save,choose,refresh;
   bool selfAvailable;
   InstallationReport installation;
@@ -62,7 +62,17 @@ namespace ReFix {
   static NumericUpDown Number(decimal min,decimal max,decimal step,decimal value,int decimals=0){return new NumericUpDown{Minimum=min,Maximum=max,Increment=step,Value=value,DecimalPlaces=decimals,Width=140,BackColor=Card,ForeColor=Ink};}
   Panel NewPage(string name) {var p=new Panel {Dock=DockStyle.Fill,AutoScroll=true};pages[name]=p;page.Controls.Add(p);return p;}
   FlowLayoutPanel Flow(Panel parent){var f=new FlowLayoutPanel{Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoScroll=true};parent.Controls.Add(f);return f;}
-  void ShowPage(string name){foreach(var item in pages)item.Value.Visible=item.Key==name;pages[name].BringToFront();}
+  void ShowPage(string name){foreach(var item in pages)item.Value.Visible=item.Key==name;pages[name].BringToFront();if(name=="Дополнения"){var ignored=CheckAddons();}}
+  // 1.8: add-on files (up to 1.4 GB) are verified only here, not at start-up
+  async Task CheckAddons() {
+   if(game==null || busy || addonsCheck==null)return;
+   int n=game.State.addons.Count;if(n==0){addonsCheck.Text="Дополнения через лаунчер не установлены.";return;}
+   addonsCheck.Text="Проверка файлов дополнений…";
+   try {var errors=await Task.Run(()=>Installation.VerifyAddons(game.Root,game.State));int files=Installation.AddonFileCount(game.State);
+    addonsCheck.Text=errors.Count==0?"Установлено дополнений: "+n+", файлов проверено: "+files+", всё на месте.":"Проблемы ("+errors.Count+"): "+string.Join("; ",errors.Take(5))+(errors.Count>5?" …":"")+". Снимите и поставьте дополнение заново.";
+    game.Log("ADDONS_CHECK","addons="+n+"; files="+files+"; errors="+errors.Count);}
+   catch(Exception ex){addonsCheck.Text="Не удалось проверить дополнения: "+ex.Message;}
+  }
   void BuildHome() {
    var f=Flow(NewPage("Играть"));f.Controls.Add(Label("Вернуться в Зону",28,Ink));f.Controls.Add(Label("Сборка ReFix · S.T.A.L.K.E.R. Тень Чернобыля",11,Muted));
    location=Label("Выберите папку игры",10,Muted);location.MaximumSize=new Size(690,0);f.Controls.Add(location);
@@ -88,7 +98,7 @@ namespace ReFix {
     }
     status.Text="Установка обновления…";await Task.Run(()=>game.InstallPreparedPatch(prepared));prepared=null;await Inspect();RenderState();status.Text="Обновление установлено. Проверка файлов завершена.";
    });f.Controls.Add(install);
-   verify=Button("Проверить установку",280);verify.Click+=async(s,e)=>await Run(async()=>{await Inspect();RenderState();notes.Text=installation.Title+"\r\nПроверено файлов патча: "+installation.Checked+"\r\n\r\n"+(installation.Differences.Count==0?"Файлы соответствуют эталону.":String.Join("\r\n",installation.Differences));status.Text="Проверка установки завершена.";});f.Controls.Add(verify);
+   verify=Button("Проверить установку",280);verify.Click+=async(s,e)=>await Run(async()=>{await Inspect(true);RenderState();notes.Text=installation.Title+"\r\nПроверено файлов патча: "+installation.Checked+"\r\n\r\n"+(installation.Differences.Count==0?"Файлы соответствуют эталону.":String.Join("\r\n",installation.Differences));status.Text="Проверка установки завершена.";});f.Controls.Add(verify);
    selfUpdate=Button("Обновить лаунчер",280);selfUpdate.Visible=false;selfUpdate.Click+=async(s,e)=>await UpdateLauncher();f.Controls.Add(selfUpdate);
    f.Controls.Add(Label("Новости сборки",17,Ink));
    notes=new TextBox{Multiline=true,ReadOnly=true,BorderStyle=BorderStyle.None,BackColor=Card,ForeColor=Ink,Width=700,Height=245,ScrollBars=ScrollBars.Vertical,Text="Проверка GitHub выполняется при каждом запуске.\r\nПри отсутствии сети можно продолжить игру."};f.Controls.Add(notes);
@@ -104,12 +114,14 @@ namespace ReFix {
    textures=new CheckBox{Text="Оптимизация текстур — меньше фризов при появлении NPC у баз (около 1,4 ГБ)",AutoSize=true,Margin=new Padding(0,4,0,18)};f.Controls.Add(textures);
    f.Controls.Add(Label("Текстуры NPC, оружия и техники приведены к размерам степени двойки с полными мип-уровнями и картами рельефа: движок больше не пересчитывает их при загрузке (фризы 1–3 с). Предлагается автоматически после проверки обновлений.",11,Muted));
    f.Controls.Add(Label("Снятие отметки восстанавливает файлы, которые были до установки дополнения через лаунчер. Сезоны (весна, лето, осень) устанавливаются по очереди: выбор одного снимает другой.",11,Muted));
+   addonsCheck=Label("",11,Muted);f.Controls.Add(addonsCheck);
    addonsButton=Button("Применить дополнения",260);addonsButton.Click+=async(s,e)=>await Run(async()=> {
     if(catalog==null)throw new IOException("Сначала проверьте обновления — нужен каталог дополнений.");
     var ids=new List<string>();string seasonId=Selected(season);if(seasonId!="")ids.Add(seasonId);if(minimal.Checked)ids.Add("optional_minimal_hud");if(newHud.Checked)ids.Add("optional_new_hud");if(textures.Checked)ids.Add(TexturesAddon);
     var selected=new Dictionary<string,string>();foreach(string id in ids){var asset=catalog.addons.FirstOrDefault(a=>a.id==id);if(asset==null)throw new IOException("Дополнение пока не опубликовано: "+id);selected[id]=await game.Download(asset);}
     status.Text="Установка дополнений…";await Task.Run(()=>game.ApplyAddons(selected));RenderState();status.Text="Выбранные дополнения применены.";
    });f.Controls.Add(addonsButton);
+   var checkButton=Button("Проверить дополнения",260);checkButton.Click+=async(s,e)=>await CheckAddons();f.Controls.Add(checkButton);
   }
   TableLayoutPanel SettingsTable(FlowLayoutPanel f) {var t=new TableLayoutPanel{AutoSize=true,ColumnCount=2,Width=690,Margin=new Padding(0,0,0,10)};t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,310));t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,320));f.Controls.Add(t);return t;}
   void Row(TableLayoutPanel table,string text,Control input) {int i=table.RowCount++;table.RowStyles.Add(new RowStyle(SizeType.Absolute,38));var label=Label(text,11,Ink);label.Margin=new Padding(0,3,0,0);table.Controls.Add(label,0,i);table.Controls.Add(input,1,i);}
@@ -198,7 +210,7 @@ namespace ReFix {
     status.Text="Установка дополнений…";await Task.Run(()=>game.ApplyAddons(selected));await Inspect();RenderState();status.Text="Дополнение «Оптимизация текстур» установлено.";
    });
   }
-  async Task Inspect() {status.Text="Проверка установленных файлов…";var profiles=Installation.Profiles(game.Root,catalog);installation=await Task.Run(()=>Installation.Verify(game,profiles));game.Log("INSTALLATION_CHECK",installation.Title+"; differences="+installation.Differences.Count);}
+  async Task Inspect(bool withAddons=false) {status.Text="Проверка установленных файлов…";var profiles=Installation.Profiles(game.Root,catalog);installation=await Task.Run(()=>Installation.Verify(game.Root,game.State,profiles,withAddons));game.Log("INSTALLATION_CHECK",installation.Title+"; differences="+installation.Differences.Count);}
   async Task UpdateLauncher() {
    if(busy || !selfAvailable || catalog==null)return;
    if(MessageBox.Show(this,"Скачать новую версию и перезапустить лаунчер? Настройки игры сохранятся.","Обновление лаунчера",MessageBoxButtons.YesNo,MessageBoxIcon.Question)!=DialogResult.Yes)return;
