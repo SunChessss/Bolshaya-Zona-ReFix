@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Linq;
 using ReFix;
 class Tests {
  static int count;
@@ -85,7 +86,7 @@ class Tests {
   Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
   known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
   Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
-  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.17.1" && Installation.Profiles()[0].files.Count==135 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
+  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.18.1" && Installation.Profiles()[0].files.Count==148 && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
   // 1.4: reference profiles published in the release catalog, cached for offline checks
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("catalog build"));
   var fresh=new InstallProfile{title="Catalog release",version="2099.1.1.1",patchHash=new string('c',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}};
@@ -144,9 +145,11 @@ class Tests {
   using(var z=ZipFile.Open(selfZip,ZipArchiveMode.Update)){using(var w=new StreamWriter(z.CreateEntry("../escape.exe").Open()))w.Write("bad");}
   Reject(()=>SelfUpdate.ReadPackage(selfZip),"reject extra files and traversal in self-update");
   // 1.7: game folder normalisation (self-update passed "D:\\X\\" which the command line turned into D:\X")
+  if(Path.DirectorySeparatorChar=='\\') {   // Windows paths (the suite also runs under Mono on Linux)
   Check(Data.Root(root+"\\")==root && Data.Root(root+"\\\"")==root && Data.Root(" "+root+" ")==root,"root path normalised (trailing separator and stray quote)");
   Check(Data.Root("C:\\")=="C:\\","drive root keeps its separator");
   Check(new GameService(root+"\\").Root==root,"game service strips the trailing separator");
+  }
   // 1.7: add-on hashes are stored in state.json and verification does not need the archive
   string base17=game.ReadConfig("gamedata/config/ui/test.xml");string baseHash17=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"));
   string addon17=Package("addon17",new Dictionary<string,string>{{"gamedata/config/ui/test.xml","addon17"},{"gamedata/textures/t.dds","dds"}});
@@ -168,6 +171,92 @@ class Tests {
   // 1.7: streaming package reader
   var pkg=ReFix.Package.Load(Data.Safe(root,addon17),true);
   using(var reader=pkg.Open())Check(Encoding.UTF8.GetString(reader.Read("gamedata/textures/t.dds"))=="dds","package reader returns verified entry");
+  // ------------------------------------------------------------------ 1.9
+  Tests19(game);
   Console.WriteLine("TOTAL "+count+" passed. Fixture: "+root);
  }
+ static string Text(string rel){return File.ReadAllText(Data.Safe(root,rel));}
+ static DateTime Stamp(string rel){return File.GetLastWriteTimeUtc(Data.Safe(root,rel));}
+ static int Pending(){string d=Data.Safe(root,".refix-launcher/transactions");return Directory.Exists(d)?Directory.GetDirectories(d).Length:0;}
+ static void Tests19(GameService game) {
+  game.ApplyAddons(new Dictionary<string,string>());
+  var tex=new Dictionary<string,string>();for(int i=0;i<60;i++)tex["gamedata/textures/t"+i+".dds"]="tex"+i;
+  Data.Atomic(Data.Safe(root,"gamedata/textures/t0.dds"),Encoding.UTF8.GetBytes("orig0"));
+  string texZip=Package("tex19",tex),hudA=Package("huda19",new Dictionary<string,string>{{"gamedata/config/ui/hud.xml","A"}}),hudB=Package("hudb19",new Dictionary<string,string>{{"gamedata/config/ui/hud.xml","B"}});
+  Data.Atomic(Data.Safe(root,"gamedata/config/ui/hud.xml"),Encoding.UTF8.GetBytes("orig hud"));
+  game.ApplyAddons(new Dictionary<string,string>{{"optional_textures",texZip},{"optional_minimal_hud",hudA}});
+  Check(Text("gamedata/textures/t0.dds")=="tex0" && Text("gamedata/config/ui/hud.xml")=="A","1.9: two add-ons applied");
+  Check(Pending()==0,"1.9: finished transactions are deleted (no copies of originals left behind)");
+  string texBase=game.State.addons.First(a=>a.id=="optional_textures").originals["gamedata/textures/t0.dds"];
+  Check(Text(texBase)=="orig0","1.9: original moved into bases");
+  System.Threading.Thread.Sleep(30);DateTime t0=Stamp("gamedata/textures/t5.dds");
+  game.ApplyAddons(new Dictionary<string,string>{{"optional_textures",texZip},{"optional_new_hud",hudB}});
+  Check(Text("gamedata/config/ui/hud.xml")=="B" && Stamp("gamedata/textures/t5.dds")==t0 && game.State.addons.First(a=>a.id=="optional_textures").originals["gamedata/textures/t0.dds"]==texBase,"1.9: switching the HUD does not reinstall the textures add-on");
+  string log=File.ReadAllText(Data.Safe(root,".refix-launcher/operations.log"));int before=log.Length;
+  game.ApplyAddons(new Dictionary<string,string>{{"optional_textures",texZip},{"optional_new_hud",hudB}});
+  Check(File.ReadAllText(Data.Safe(root,".refix-launcher/operations.log")).Substring(before).Contains("ADDONS_UNCHANGED"),"1.9: unchanged selection does nothing");
+  game.ApplyAddons(new Dictionary<string,string>{{"optional_new_hud",hudB}});
+  Check(Text("gamedata/textures/t0.dds")=="orig0" && !File.Exists(Data.Safe(root,"gamedata/textures/t1.dds")) && !Directory.Exists(Path.GetDirectoryName(Data.Safe(root,texBase))),"1.9: removing an add-on moves originals back and deletes its base folder");
+  // cancellation in the middle of an activation rolls everything back
+  var stateBefore=Data.Json(game.State);var cts=new System.Threading.CancellationTokenSource();
+  game.Token=cts.Token;game.Progress=m=>{if(m.Contains("50 из"))cts.Cancel();};
+  Reject(()=>game.ApplyAddons(new Dictionary<string,string>{{"optional_textures",texZip},{"optional_new_hud",hudB}}),"1.9: cancellation stops the operation");
+  game.Token=System.Threading.CancellationToken.None;game.Progress=m=>{};game.LoadState();
+  Check(Text("gamedata/textures/t0.dds")=="orig0" && !File.Exists(Data.Safe(root,"gamedata/textures/t30.dds")) && Text("gamedata/config/ui/hud.xml")=="B" && Data.Json(game.State)==stateBefore && !Transaction.Pending(root),"1.9: cancelled operation rolled back by moving files back");
+  // interrupted operation (launcher killed): recovered on the next start
+  var tx=new Transaction(root);tx.Put("gamedata/config/ui/hud.xml",Encoding.UTF8.GetBytes("half"));tx.Move("gamedata/textures/t0.dds",".refix-launcher/bases/x/t0.dds");
+  Check(Transaction.Pending(root),"1.9: interrupted transaction detected");
+  new GameService(root).Recover();
+  Check(Text("gamedata/config/ui/hud.xml")=="B" && Text("gamedata/textures/t0.dds")=="orig0" && !Transaction.Pending(root) && Pending()==0,"1.9: recovery moves files back and cleans up");
+  // a journal of 1.8 (copied backups) is still rolled back
+  string old=Data.Safe(root,".refix-launcher/transactions/old18");Directory.CreateDirectory(Path.Combine(old,"before"));
+  File.WriteAllText(Path.Combine(old,"before","0"),"B");Data.Atomic(Data.Safe(root,"gamedata/config/ui/hud.xml"),Encoding.UTF8.GetBytes("written by 1.8"));
+  Data.WriteJson(Path.Combine(old,"journal.json"),new Journal{changes=new List<Change>{new Change{path="gamedata/config/ui/hud.xml",backup="before/0"},new Change{path="gamedata/created18.xml"}}});
+  Data.Atomic(Data.Safe(root,"gamedata/created18.xml"),new byte[]{1});
+  Transaction.Recover(root);
+  Check(Text("gamedata/config/ui/hud.xml")=="B" && !File.Exists(Data.Safe(root,"gamedata/created18.xml")),"1.9: journals of 1.8 still roll back");
+  // a crash between the journal line and the move leaves the original in place
+  string cut=Data.Safe(root,".refix-launcher/transactions/cut");Directory.CreateDirectory(cut);
+  Data.WriteJson(Path.Combine(cut,"journal.json"),new Journal());File.WriteAllText(Path.Combine(cut,"changes.log"),Data.Json(new Change{path="gamedata/config/ui/hud.xml",aside="aside/0"})+"\n{\"path\":\"gamedata/x");
+  Transaction.Recover(root);
+  Check(Text("gamedata/config/ui/hud.xml")=="B","1.9: record without moved file keeps the original");
+  // patch: only add-ons overlaying patch files are taken off and put back; declined offers survive
+  game.ApplyAddons(new Dictionary<string,string>{{"optional_textures",texZip},{"optional_new_hud",hudB}});
+  game.Decline("optional_season_spring");
+  System.Threading.Thread.Sleep(30);t0=Stamp("gamedata/textures/t5.dds");
+  string p19=Package("patch19",new Dictionary<string,string>{{"gamedata/config/ui/hud.xml","patched base"},{"gamedata/scripts/x.script","x"}});
+  game.ApplyPatch(p19,"2026.10.18.1",new string('e',64));
+  Check(Stamp("gamedata/textures/t5.dds")==t0 && Text("gamedata/config/ui/hud.xml")=="B" && game.State.declined.Contains("optional_season_spring") && game.State.declined.Contains("optional_textures"),"1.9: patch keeps non-overlapping add-ons and declined offers");
+  game.ApplyAddons(new Dictionary<string,string>{{"optional_textures",texZip}});
+  Check(Text("gamedata/config/ui/hud.xml")=="patched base","1.9: overlapping add-on re-applied over the new patch base");
+  // cache: a verified archive is trusted by its marker
+  string data=Data.Safe(root,texZip);string h=Data.HashFile(data);string c19=Data.Safe(root,".refix-launcher/cache/"+h+".zip");File.Copy(data,c19,true);
+  var a19=new Asset{id="tex",url="https://github.com/"+GameService.Repository+"/releases/download/t/tex.zip",sha256=h,bytes=new FileInfo(c19).Length};
+  game.Download(a19).GetAwaiter().GetResult();game.Download(a19).GetAwaiter().GetResult();
+  Check(File.Exists(c19+".ok") && File.ReadAllText(Data.Safe(root,".refix-launcher/operations.log")).Contains("DOWNLOAD_CACHE_TRUSTED"),"1.9: cached archive verified once");
+  Reject(()=>game.CheckSpace(long.MaxValue/4),"1.9: refuse when the disk is too small");
+  // grass
+  byte[] r1=Encoding.UTF8.GetBytes("R1 build"),r2=Encoding.UTF8.GetBytes("R2 build");
+  Data.Atomic(Data.Safe(root,"bin/xrRender_R1.dll"),r1);Data.Atomic(Data.Safe(root,"bin/xrRender_R2.dll"),r2);
+  Data.Atomic(Data.Safe(root,"bin/xrGame.dll"),Encoding.UTF8.GetBytes("patched xrGame"));
+  var g=new Dictionary<string,string>();foreach(string r in new[]{"049","121","241"})foreach(string n in new[]{"R1","R2"})g["grass/"+r+"/xrRender_"+n+".dll"]=n+" "+r;
+  string gz=Package("grass19",g);
+  Reject(()=>Grass.Load(Data.Safe(root,Package("grassbad",new Dictionary<string,string>{{"grass/049/xrGame.dll","x"}}))),"1.9: grass package may contain only xrRender DLLs");
+  Reject(()=>Grass.Load(Data.Safe(root,Package("grasshalf",new Dictionary<string,string>{{"grass/049/xrRender_R1.dll","x"}}))),"1.9: grass package needs both DLLs");
+  Grass.Apply(game,gz,"121",null);
+  Check(Text("bin/xrRender_R1.dll")=="R1 121" && Text("bin/xrRender_R2.dll")=="R2 121" && game.State.grass=="121" && Text("bin/xrGame.dll")=="patched xrGame","1.9: grass pair installed, xrGame.dll untouched");
+  Check(File.ReadAllText(Data.Safe(root,Grass.BackupDir+"/xrRender_R1.dll"))=="R1 build","1.9: renderer of the build kept");
+  Grass.Apply(game,gz,"241",null);Check(Text("bin/xrRender_R2.dll")=="R2 241" && File.ReadAllText(Data.Safe(root,Grass.BackupDir+"/xrRender_R2.dll"))=="R2 build","1.9: switching variants keeps the first originals");
+  game.LoadState();Check(game.State.grass=="241","1.9: grass choice stored in state.json");
+  Grass.Apply(game,gz,null,null);Check(Text("bin/xrRender_R1.dll")=="R1 build" && Text("bin/xrRender_R2.dll")=="R2 build" && game.State.grass==null,"1.9: build renderer restored");
+  Grass.Apply(game,gz,"049",null);Data.Atomic(Data.Safe(root,"bin/xrRender_R1.dll"),Encoding.UTF8.GetBytes("someone else"));
+  Reject(()=>Grass.Apply(game,gz,"121",null),"1.9: renderer changed outside the launcher is not overwritten");
+  Data.Atomic(Data.Safe(root,"bin/xrRender_R1.dll"),Encoding.UTF8.GetBytes("R1 049"));
+  var withRender=new List<InstallProfile>{new InstallProfile{title="p",patchHash=game.State.patchHash,files=new List<FileRow>{new FileRow{file="bin/xrRender_R2.dll",sha256=new string('a',64)}}}};
+  Reject(()=>Grass.Apply(game,gz,"121",withRender),"1.9: grass refused when the installed patch ships its own renderer");
+  string pr=Package("patchrender",new Dictionary<string,string>{{"bin/xrRender_R2.dll","patched R2"}});
+  game.ApplyPatch(pr,"2026.10.18.2",new string('f',64));
+  Check(game.State.grass==null && game.State.grassOriginal.Count==0 && Text("bin/xrRender_R2.dll")=="patched R2","1.9: a patch with a renderer resets the grass choice");
+ }
 }
+

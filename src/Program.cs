@@ -40,12 +40,17 @@ namespace ReFix {
   ComboBox season,render,resolution,texture,aniso;CheckBox minimal,newHud,textures,fullscreen,vsync;
   public const string TexturesAddon="optional_textures";   // 1.7: offered automatically after the update check
   NumericUpDown weight,maximum,speed,distance,gamma,grass;ComboBox lootDrop;
+  ComboBox grassRadius;Button grassSave,cancelOp;   // 1.9
+  CancellationTokenSource cts;bool writing,closeRequested;   // 1.9: cancellation of long operations
   Dictionary<string,Panel> pages=new Dictionary<string,Panel>();
   public MainForm(string root) {
    initialRoot=root;Text="Большая Зона · ReFix";Size=new Size(1080,780);MinimumSize=new Size(960,730);StartPosition=FormStartPosition.CenterScreen;
    BackColor=Bg;ForeColor=Ink;Font=new Font("Segoe UI",10);AutoScaleMode=AutoScaleMode.Dpi;
    var footer=new Panel {Dock=DockStyle.Bottom,Height=48,BackColor=Card,Padding=new Padding(20,8,20,8)};
-   status=Label("Готов к запуску",10,Muted);status.Dock=DockStyle.Fill;footer.Controls.Add(status);Controls.Add(footer);
+   status=Label("Готов к запуску",10,Muted);status.Dock=DockStyle.Fill;footer.Controls.Add(status);
+   cancelOp=Button("Отмена",120);cancelOp.Dock=DockStyle.Right;cancelOp.Height=32;cancelOp.Margin=new Padding(0);cancelOp.Visible=false;
+   cancelOp.Click+=(s,e)=>{var c=cts;if(c!=null){c.Cancel();cancelOp.Enabled=false;status.Text="Отмена… уже изменённые файлы возвращаются на место.";}};
+   footer.Controls.Add(cancelOp);Controls.Add(footer);
    var nav=new FlowLayoutPanel {Dock=DockStyle.Left,Width=200,Padding=new Padding(20,28,14,0),FlowDirection=FlowDirection.TopDown,WrapContents=false,BackColor=Card};
    nav.Controls.Add(Label("☢  ReFix",25,Gold));nav.Controls.Add(Label("БОЛЬШАЯ ЗОНА",10,Muted));
    var spacer=new Panel{Height=34,Width=160};nav.Controls.Add(spacer);
@@ -53,30 +58,55 @@ namespace ReFix {
    nav.Controls.Add(new Panel{Height=30,Width=160});nav.Controls.Add(Label("by SunChess\nЛаунчер "+SelfUpdate.VersionString,10,Muted));Controls.Add(nav);
    page=new Panel {Dock=DockStyle.Fill,Padding=new Padding(28,25,28,15)};Controls.Add(page);page.BringToFront();
    BuildHome();BuildAddons();BuildSettings();ShowPage("Играть");
-   Shown+=async(s,e)=> {SetRoot(initialRoot);if(game!=null)await Check();};
-   FormClosing+=(s,e)=> {if(busy){e.Cancel=true;status.Text="Дождитесь завершения операции — файлы ещё обрабатываются.";}};
+   Shown+=async(s,e)=> {await SetRoot(initialRoot);if(game!=null)await Check();};
+   // 1.9: a running file operation can be interrupted; it is rolled back before the window closes.
+   // Read-only work (update check, file verification) does not keep the window open.
+   FormClosing+=(s,e)=> {
+    if(!writing)return;
+    e.Cancel=true;
+    if(closeRequested)return;
+    if(MessageBox.Show(this,"Идёт установка. Прервать её? Уже изменённые файлы будут возвращены, затем лаунчер закроется.","ReFix",MessageBoxButtons.YesNo,MessageBoxIcon.Question)!=DialogResult.Yes)return;
+    closeRequested=true;var c=cts;if(c!=null)c.Cancel();status.Text="Отмена… уже изменённые файлы возвращаются на место.";
+   };
   }
   static Label Label(string text,int size,Color color){return new Label{Text=text,Font=new Font("Segoe UI",size),ForeColor=color,AutoSize=true,MaximumSize=new Size(760,0),Margin=new Padding(0,0,0,12)};}
   static Button Button(string text,int width=210) {return new Button{Text=text,Width=width,Height=40,FlatStyle=FlatStyle.Flat,BackColor=Color.FromArgb(43,51,47),ForeColor=Ink,Cursor=Cursors.Hand,Margin=new Padding(0,0,12,12)};}
-  static ComboBox Combo(params Choice[] choices) {var c=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Width=260,BackColor=Card,ForeColor=Ink,FlatStyle=FlatStyle.Flat};c.Items.AddRange(choices);c.SelectedIndex=0;return c;}
-  static NumericUpDown Number(decimal min,decimal max,decimal step,decimal value,int decimals=0){return new NumericUpDown{Minimum=min,Maximum=max,Increment=step,Value=value,DecimalPlaces=decimals,Width=140,BackColor=Card,ForeColor=Ink};}
+  static ComboBox Combo(params Choice[] choices) {var c=new ComboBox{DropDownStyle=ComboBoxStyle.DropDownList,Width=260,BackColor=Card,ForeColor=Ink,FlatStyle=FlatStyle.Flat};c.Items.AddRange(choices);c.SelectedIndex=0;NoWheel(c);return c;}
+  static NumericUpDown Number(decimal min,decimal max,decimal step,decimal value,int decimals=0){var n=new NumericUpDown{Minimum=min,Maximum=max,Increment=step,Value=value,DecimalPlaces=decimals,Width=140,BackColor=Card,ForeColor=Ink};NoWheel(n);return n;}
+  // 1.9: the mouse wheel scrolls the page, not the value of the field under focus (players scrolled to "Сохранить" and
+  // turned 30 kg into 1 kg or switched the resolution without noticing). An open drop-down list still scrolls.
+  static void NoWheel(Control c) {
+   c.MouseWheel+=(s,e)=> {
+    var cb=c as ComboBox;if(cb!=null && cb.DroppedDown)return;
+    var h=e as HandledMouseEventArgs;if(h!=null)h.Handled=true;
+    for(Control p=c.Parent;p!=null;p=p.Parent){var sc=p as ScrollableControl;if(sc!=null && sc.AutoScroll){int y=Math.Max(0,-sc.AutoScrollPosition.Y-e.Delta);sc.AutoScrollPosition=new Point(-sc.AutoScrollPosition.X,y);break;}}
+   };
+  }
   Panel NewPage(string name) {var p=new Panel {Dock=DockStyle.Fill,AutoScroll=true};pages[name]=p;page.Controls.Add(p);return p;}
   FlowLayoutPanel Flow(Panel parent){var f=new FlowLayoutPanel{Dock=DockStyle.Fill,FlowDirection=FlowDirection.TopDown,WrapContents=false,AutoScroll=true};parent.Controls.Add(f);return f;}
-  void ShowPage(string name){foreach(var item in pages)item.Value.Visible=item.Key==name;pages[name].BringToFront();if(name=="Дополнения"){var ignored=CheckAddons();}}
-  // 1.8: add-on files (up to 1.4 GB) are verified only here, not at start-up
+  void ShowPage(string name){foreach(var item in pages)item.Value.Visible=item.Key==name;pages[name].BringToFront();if(name=="Дополнения" && game!=null && addonsCheck!=null && addonsCheck.Text=="")addonsCheck.Text=AddonsSummary();}
+  string AddonsSummary() {
+   int n=game.State.addons.Count;
+   return n==0?"Дополнения через лаунчер не установлены.":"Установлено дополнений: "+n+" ("+String.Join(", ",game.State.addons.Select(a=>a.id.Replace("optional_","")))+"). Проверка файлов — кнопкой «Проверить дополнения».";
+  }
+  // 1.8: add-on files (up to 1.4 GB) are verified only here, not at start-up; 1.9: only by the button and as a regular
+  // operation (other buttons wait, "Отмена" stops it), not every time the page is opened.
   async Task CheckAddons() {
    if(game==null || busy || addonsCheck==null)return;
    int n=game.State.addons.Count;if(n==0){addonsCheck.Text="Дополнения через лаунчер не установлены.";return;}
    addonsCheck.Text="Проверка файлов дополнений…";
-   try {var errors=await Task.Run(()=>Installation.VerifyAddons(game.Root,game.State));int files=Installation.AddonFileCount(game.State);
+   await Run(async()=> {
+    var token=cts.Token;
+    var errors=await Task.Run(()=>Installation.VerifyAddons(game.Root,game.State,token));int files=Installation.AddonFileCount(game.State);
     addonsCheck.Text=errors.Count==0?"Установлено дополнений: "+n+", файлов проверено: "+files+", всё на месте.":"Проблемы ("+errors.Count+"): "+string.Join("; ",errors.Take(5))+(errors.Count>5?" …":"")+". Снимите и поставьте дополнение заново.";
-    game.Log("ADDONS_CHECK","addons="+n+"; files="+files+"; errors="+errors.Count);}
-   catch(Exception ex){addonsCheck.Text="Не удалось проверить дополнения: "+ex.Message;}
+    game.Log("ADDONS_CHECK","addons="+n+"; files="+files+"; errors="+errors.Count);status.Text="Проверка дополнений завершена.";
+   },false);
+   if(addonsCheck.Text=="Проверка файлов дополнений…")addonsCheck.Text=AddonsSummary();
   }
   void BuildHome() {
    var f=Flow(NewPage("Играть"));f.Controls.Add(Label("Вернуться в Зону",28,Ink));f.Controls.Add(Label("Сборка ReFix · S.T.A.L.K.E.R. Тень Чернобыля",11,Muted));
    location=Label("Выберите папку игры",10,Muted);location.MaximumSize=new Size(690,0);f.Controls.Add(location);
-   choose=Button("Выбрать папку игры");choose.Click+=async(s,e)=> {using(var d=new FolderBrowserDialog{Description="Корневая папка ReFix с bin и gamedata"})if(d.ShowDialog()==DialogResult.OK){SetRoot(d.SelectedPath);if(game!=null)await Check();}};f.Controls.Add(choose);
+   choose=Button("Выбрать папку игры");choose.Click+=async(s,e)=> {using(var d=new FolderBrowserDialog{Description="Корневая папка ReFix с bin и gamedata"})if(d.ShowDialog()==DialogResult.OK){await SetRoot(d.SelectedPath);if(game!=null)await Check();}};f.Controls.Add(choose);
    version=Label("Версия установленных исправлений: не определена",12,Gold);f.Controls.Add(version);
    var row=new FlowLayoutPanel{AutoSize=true,Width=700};
    play=Button("ИГРАТЬ",220);play.Height=52;play.BackColor=Gold;play.ForeColor=Bg;play.Font=new Font(Font,FontStyle.Bold);play.Click+=(s,e)=> {try{game.Launch();status.Text="Игра запущена. Для изменения настроек закройте её.";}catch(Exception ex){Error(ex);}};
@@ -113,13 +143,13 @@ namespace ReFix {
    f.Controls.Add(Label("Производительность",16,Gold));
    textures=new CheckBox{Text="Оптимизация текстур — меньше фризов при появлении NPC у баз (около 1,4 ГБ)",AutoSize=true,Margin=new Padding(0,4,0,18)};f.Controls.Add(textures);
    f.Controls.Add(Label("Текстуры NPC, оружия и техники приведены к размерам степени двойки с полными мип-уровнями и картами рельефа: движок больше не пересчитывает их при загрузке (фризы 1–3 с). Предлагается автоматически после проверки обновлений.",11,Muted));
-   f.Controls.Add(Label("Снятие отметки восстанавливает файлы, которые были до установки дополнения через лаунчер. Сезоны (весна, лето, осень) устанавливаются по очереди: выбор одного снимает другой.",11,Muted));
+   f.Controls.Add(Label("Снятие отметки восстанавливает файлы, которые были до установки дополнения через лаунчер. Сезоны (весна, лето, осень) устанавливаются по очереди: выбор одного снимает другой. Меняются только дополнения, выбор которых изменился: уже установленные не переустанавливаются.",11,Muted));
    addonsCheck=Label("",11,Muted);f.Controls.Add(addonsCheck);
    addonsButton=Button("Применить дополнения",260);addonsButton.Click+=async(s,e)=>await Run(async()=> {
     if(catalog==null)throw new IOException("Сначала проверьте обновления — нужен каталог дополнений.");
     var ids=new List<string>();string seasonId=Selected(season);if(seasonId!="")ids.Add(seasonId);if(minimal.Checked)ids.Add("optional_minimal_hud");if(newHud.Checked)ids.Add("optional_new_hud");if(textures.Checked)ids.Add(TexturesAddon);
     var selected=new Dictionary<string,string>();foreach(string id in ids){var asset=catalog.addons.FirstOrDefault(a=>a.id==id);if(asset==null)throw new IOException("Дополнение пока не опубликовано: "+id);selected[id]=await game.Download(asset);}
-    status.Text="Установка дополнений…";await Task.Run(()=>game.ApplyAddons(selected));RenderState();status.Text="Выбранные дополнения применены.";
+    status.Text="Установка дополнений…";await Task.Run(()=>game.ApplyAddons(selected));RenderState();addonsCheck.Text=AddonsSummary();status.Text="Выбранные дополнения применены.";
    });f.Controls.Add(addonsButton);
    var checkButton=Button("Проверить дополнения",260);checkButton.Click+=async(s,e)=>await CheckAddons();f.Controls.Add(checkButton);
   }
@@ -139,6 +169,19 @@ namespace ReFix {
    gamma=Number(0.5m,1.5m,0.05m,1,2);Row(table,"Гамма",gamma);
    fontSize=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Очень крупный","largest"),new Choice("Изменён вне лаунчера","custom"));Row(table,"Текст интерфейса игры",fontSize);
    f.Controls.Add(Label("Размер текста Arial/Letterica: диалоги, КПК и другие окна с этими шрифтами. После перезапуска игры. Крупный текст может не помещаться в отдельных окнах. С патчем от 15.10.2026 (3) крупный текст — шрифт Inter (обычное начертание).",10,Muted));
+   // 1.9: grass draw distance - pairs of xrRender_R1/R2.dll by the author of the build
+   var grassTable=SettingsTable(f);
+   grassRadius=Combo(new Choice("Как в сборке (R1 — 49, R2 — 241)",""),new Choice("49 — стандарт ТЧ","049"),new Choice("81","081"),new Choice("121","121"),new Choice("161","161"),new Choice("201","201"),new Choice("241 — как R2 в сборке","241"),new Choice("281","281"),new Choice("321","321"),new Choice("361","361"),new Choice("401 — максимум","401"));
+   Row(grassTable,"Дальность травы",grassRadius);
+   f.Controls.Add(Label("Радиус отрисовки травы для статического (R1) и динамического (R2) освещения: варианты рендера от автора сборки. Больше — красивее вдали, но ниже FPS (особенно на R2). Меняются только xrRender_R1/R2.dll, исправленный xrGame.dll не затрагивается. После перезапуска игры.",10,Muted));
+   grassSave=Button("Применить дальность травы",280);grassSave.Click+=async(s,e)=>await Run(async()=> {
+    if(catalog==null)throw new IOException("Сначала проверьте обновления — нужен каталог дополнений.");
+    var asset=catalog.addons.FirstOrDefault(a=>a.id==Grass.AddonId);if(asset==null)throw new IOException("Пакет дальности травы пока не опубликован.");
+    string radius=Selected(grassRadius);if(radius=="")radius=null;
+    string archive=await game.Download(asset);var profiles=Installation.Profiles(game.Root,catalog);
+    status.Text="Установка рендера…";await Task.Run(()=>Grass.Apply(game,archive,radius,profiles));RenderState();
+    status.Text=radius==null?"Рендер сборки возвращён. Перезапустите игру.":"Дальность травы "+radius.TrimStart('0')+" установлена. Перезапустите игру.";
+   });f.Controls.Add(grassSave);
    fontSave=Button("Применить размер текста",280);fontSave.Click+=async(s,e)=>await Run(async()=>{string preset=Selected(fontSize);await Task.Run(()=>GameFonts.Save(game,preset));status.Text="Размер текста сохранён. Перезапустите игру.";});f.Controls.Add(fontSave);
    var ui=SettingsTable(f);
    uiScale=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Изменён вне лаунчера","custom"));Row(ui,"Масштаб интерфейса",uiScale);
@@ -153,46 +196,65 @@ namespace ReFix {
    f.Controls.Add(Label("Как в сборке: костюм почти с каждого, патроны и аптечки 77–88%, артефакты. Уменьшенный: примерно вдвое меньше, костюм в 30%, половина денег. Как в оригинальном ТЧ: без артефактов и костюмов, патроны 10–30%, аптечка 10%. Мусорщик: патроны ~25%, костюм 8%, четверть денег. Нужен патч от 15.10.2026 (4); действует после перезапуска, сохранения не ломает.",10,Muted));
    save=Button("Сохранить настройки",240);save.Click+=async(s,e)=>await Run(async()=> {
     var values=new Dictionary<string,string>{{"renderer",Selected(render)},{"vid_mode",Selected(resolution)},{"rs_fullscreen",fullscreen.Checked?"on":"off"},{"rs_v_sync",vsync.Checked?"on":"off"},{"texture_lod",Selected(texture)},{"r__tf_aniso",Selected(aniso)},{"rs_vis_distance",(distance.Value/100).ToString(CultureInfo.InvariantCulture)},{"r__detail_density",(grass.Value/100).ToString(CultureInfo.InvariantCulture)},{"rs_c_gamma",gamma.Value.ToString(CultureInfo.InvariantCulture)}};
-    decimal w=weight.Value,m=maximum.Value,sp=speed.Value;string lootPreset=Selected(lootDrop);await Task.Run(()=>game.SaveSettings(values,w,m,sp,lootPreset));status.Text="Настройки сохранены. Изменения вступят в силу при запуске игры.";
+    decimal w=weight.Value,m=maximum.Value,sp=speed.Value;string lootPreset=Selected(lootDrop);
+    if((w<20 || sp<0.5m) && MessageBox.Show(this,"Комфортный вес "+w+" кг, скорость ×"+sp+". Это заметно меньше исходных 30 кг и 1×. Сохранить так?","ReFix — проверка настроек",MessageBoxButtons.YesNo,MessageBoxIcon.Warning)!=DialogResult.Yes){status.Text="Сохранение отменено.";return;}
+    await Task.Run(()=>game.SaveSettings(values,w,m,sp,lootPreset));
+    // 1.9: read back what was written and show it
+    string u=game.ReadConfig("userdata/user.ltx"),l=game.ReadConfig("gamedata/config/bz_lord.ltx");
+    notes.Text="Сохранено:\r\n"+String.Join("\r\n",values.Keys.Select(k=>k+" = "+(Config.Value(u,k)??"?")))+"\r\nКомфортный вес = "+Config.Value(l,"max_weight","bz_lord_inventory")+" кг, предельный = "+Config.Value(l,"max_walk_weight","bz_lord_actor_condition")+" кг, ускорение = "+Config.Value(l,"walk_accel","bz_lord_actor")+", дроп = "+Config.Value(l,"preset","bz_loot")+"\r\n\r\nНастройки графики, изменённые потом в меню игры, игра сама запишет в user.ltx при выходе.";
+    status.Text="Настройки сохранены. Изменения вступят в силу при запуске игры.";
    });f.Controls.Add(save);
   }
   static string Selected(ComboBox c){return ((Choice)c.SelectedItem).Value;}
   static void Select(ComboBox c,string value){var match=c.Items.Cast<Choice>().FirstOrDefault(x=>x.Value==value);if(match==null){match=new Choice(value,value);c.Items.Add(match);}c.SelectedItem=match;}
   static decimal ReadNumber(string text,string key,decimal fallback,string section=null){decimal d;return Decimal.TryParse(Config.Value(text,key,section),NumberStyles.Float,CultureInfo.InvariantCulture,out d)?d:fallback;}
   static void SetNumber(NumericUpDown input,decimal value){input.Value=Math.Max(input.Minimum,Math.Min(input.Maximum,value));}
-  void SetRoot(string root) {
+  async Task SetRoot(string root) {
    try {
     prepared=null;installation=null;selfAvailable=false;game=new GameService(root);catalog=null;location.Text=game.Root;
     game.Progress=s=> {if(IsHandleCreated)BeginInvoke(new Action(()=>status.Text=s));};
+    // 1.9: an operation interrupted last time is rolled back here, in the background, with a message; finished
+    // transactions and unused bases are deleted
+    bool pending=Transaction.Pending(game.Root);
+    busy=true;EnableActions();
+    status.Text=pending?"Возврат файлов после прерванной установки…":"Очистка временных файлов лаунчера…";
+    try{await Task.Run(()=>game.Recover());}finally{busy=false;}
+    if(pending)game.Log("RECOVERED_ON_START");
     string u=game.ReadConfig("userdata/user.ltx"),l=game.ReadConfig("gamedata/config/bz_lord.ltx");
     Select(render,Config.Value(u,"renderer")??"renderer_r1");Select(resolution,Config.Value(u,"vid_mode")??"1920x1080");Select(texture,Config.Value(u,"texture_lod")??"0");Select(aniso,Config.Value(u,"r__tf_aniso")??"4");
     fullscreen.Checked=(Config.Value(u,"rs_fullscreen")??"on")=="on";vsync.Checked=Config.Value(u,"rs_v_sync")=="on";
     SetNumber(distance,ReadNumber(u,"rs_vis_distance",1)*100);SetNumber(grass,ReadNumber(u,"r__detail_density",0.3m)*100);SetNumber(gamma,ReadNumber(u,"rs_c_gamma",1));
     Select(lootDrop,Config.Value(l,"preset","bz_loot")??"mod");SetNumber(weight,ReadNumber(l,"max_weight",30,"bz_lord_inventory"));SetNumber(maximum,ReadNumber(l,"max_walk_weight",60,"bz_lord_actor_condition"));SetNumber(speed,ReadNumber(l,"walk_accel",17,"bz_lord_actor")/17);
     Select(fontSize,GameFonts.Current(game));Select(uiScale,GameUiScale.Current(game));
-    RenderState();status.Text="Папка игры выбрана.";
+    RenderState();status.Text=pending?"Прерванная установка отменена, файлы возвращены.":"Папка игры выбрана.";
    }catch(Exception ex){game=null;location.Text="Папка игры не выбрана";Error(ex);}EnableActions();
   }
   void RenderState() {
    version.Text=installation==null?"Версия: проверка файлов…":installation.Title;
    if(catalog!=null)version.Text+="  ·  доступны: "+catalog.version;
-   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.FirstOrDefault(id=>id.StartsWith("optional_season_"))??"");minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");textures.Checked=ids.Contains(TexturesAddon);
+   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.FirstOrDefault(id=>id.StartsWith("optional_season_"))??"");Select(grassRadius,game.State.grass??"");minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");textures.Checked=ids.Contains(TexturesAddon);
   }
   void EnableActions() {
    choose.Enabled=!busy;refresh.Enabled=!busy&&game!=null;play.Enabled=!busy&&game!=null;save.Enabled=!busy&&game!=null;addonsButton.Enabled=!busy&&game!=null&&catalog!=null;
    update.Enabled=!busy&&game!=null&&catalog!=null&&(installation==null||installation.PatchHash!=catalog.patch.sha256);
    install.Enabled=!busy&&game!=null&&prepared!=null;
-   verify.Enabled=!busy&&game!=null;fontSave.Enabled=!busy&&game!=null;uiSave.Enabled=!busy&&game!=null&&GameUiScale.Available(game);
+   verify.Enabled=!busy&&game!=null;fontSave.Enabled=!busy&&game!=null;grassSave.Enabled=!busy&&game!=null&&catalog!=null;
+   cancelOp.Visible=busy&&cts!=null;cancelOp.Enabled=cts!=null&&!cts.IsCancellationRequested;uiSave.Enabled=!busy&&game!=null&&GameUiScale.Available(game);
     selfUpdate.Visible=selfAvailable&&catalog!=null;selfUpdate.Enabled=!busy&&selfAvailable&&catalog!=null;
   }
-  async Task Run(Func<Task> action) {
-   if(busy)return;busy=true;EnableActions();
-   try {if(game==null)throw new IOException("Выберите папку игры");game.EnsureStopped();await action();}
-   catch(Exception ex){Error(ex);}finally{busy=false;EnableActions();}
+  // 1.9: one operation at a time; long ones can be cancelled ("Отмена" / closing the window), the transaction is rolled back
+  async Task Run(Func<Task> action,bool changesFiles=true) {
+   if(busy)return;busy=true;writing=changesFiles;cts=new CancellationTokenSource();
+   if(game!=null)game.Token=cts.Token;EnableActions();
+   try {if(game==null)throw new IOException("Выберите папку игры");if(changesFiles)game.EnsureStopped();await action();}
+   catch(OperationCanceledException){status.Text="Операция отменена, изменённые файлы возвращены.";if(game!=null)game.Log("CANCELLED");}
+   catch(Exception ex){if(cts!=null && cts.IsCancellationRequested){status.Text="Операция отменена, изменённые файлы возвращены.";}else Error(ex);}
+   finally{busy=false;writing=false;if(game!=null)game.Token=CancellationToken.None;cts=null;EnableActions();if(closeRequested)BeginInvoke(new Action(Close));}
   }
   async Task Check() {
    if(busy || game==null)return;busy=true;EnableActions();
-   try {await Inspect();RenderState();status.Text="Проверка обновлений на GitHub…";catalog=await game.Check();if(catalog.profiles!=null&&catalog.profiles.Count>0)await Inspect();selfAvailable=SelfUpdate.IsNewer(catalog.launcher);selfUpdate.Text=selfAvailable?"Обновить лаунчер до "+catalog.launcher.version:"Обновить лаунчер";notes.Text=(catalog.notes??"").Replace("\n","\r\n");RenderState();status.Text=selfAvailable?"Доступна новая версия лаунчера. Нажмите «Обновить лаунчер».":installation.PatchHash==catalog.patch.sha256?"Установлена актуальная версия, файлы проверены.":"Доступен пакет исправлений. Нажмите «Скачать обновление».";}
+   // 1.9: the catalog first, then one check of the installed files (1.8 checked them twice)
+   try {status.Text="Проверка обновлений на GitHub…";Exception checkError=null;try{catalog=await game.Check();}catch(Exception ce){catalog=null;checkError=ce;}await Inspect();if(checkError!=null){RenderState();throw checkError;}selfAvailable=SelfUpdate.IsNewer(catalog.launcher);selfUpdate.Text=selfAvailable?"Обновить лаунчер до "+catalog.launcher.version:"Обновить лаунчер";notes.Text=(catalog.notes??"").Replace("\n","\r\n");RenderState();status.Text=selfAvailable?"Доступна новая версия лаунчера. Нажмите «Обновить лаунчер».":installation.PatchHash==catalog.patch.sha256?"Установлена актуальная версия, файлы проверены.":"Доступен пакет исправлений. Нажмите «Скачать обновление».";}
    catch(Exception ex) {catalog=null;status.Text=installation==null?"Не удалось проверить установленные файлы.":"Не удалось проверить обновления. Можно играть с текущими файлами.";notes.Text=installation==null?ex.Message:"Сервер обновлений временно недоступен или релиз ещё не опубликован.\r\nЛокальная проверка: "+installation.Title+"\r\n\r\nИгра и сохранённые настройки доступны без сети.";}
    finally {busy=false;EnableActions();}
    if(catalog!=null && !selfAvailable)await OfferTextures();
