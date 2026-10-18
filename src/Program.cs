@@ -31,7 +31,7 @@ namespace ReFix {
  public class MainForm:Form {
   static readonly Color Bg=Color.FromArgb(19,23,23), Card=Color.FromArgb(29,35,34), Gold=Color.FromArgb(204,173,100), Ink=Color.FromArgb(229,233,225), Muted=Color.FromArgb(163,175,166);
   Panel page; Label status,location,version,addonsCheck; TextBox notes;
-  Button update,install,verify,fontSave,uiSave,selfUpdate,play,addonsButton,save,choose,refresh;
+  Button update,install,verify,selfUpdate,play,addonsButton,choose,refresh;
   bool selfAvailable;
   InstallationReport installation;
   ComboBox fontSize,uiScale;
@@ -40,7 +40,8 @@ namespace ReFix {
   ComboBox season,render,resolution,texture,aniso;CheckBox minimal,newHud,textures,fullscreen,vsync;
   public const string TexturesAddon="optional_textures";   // 1.7: offered automatically after the update check
   NumericUpDown weight,maximum,speed,distance,gamma,grass;ComboBox lootDrop;
-  ComboBox grassRadius;Button grassSave,cancelOp;   // 1.9
+  ComboBox grassRadius;Button cancelOp;   // 1.9
+  bool loading;System.Windows.Forms.Timer saveTimer;   // 1.9: settings are saved right after a change (no "Сохранить" buttons)
   CancellationTokenSource cts;bool writing,closeRequested;   // 1.9: cancellation of long operations
   Dictionary<string,Panel> pages=new Dictionary<string,Panel>();
   public MainForm(string root) {
@@ -62,6 +63,8 @@ namespace ReFix {
    // 1.9: a running file operation can be interrupted; it is rolled back before the window closes.
    // Read-only work (update check, file verification) does not keep the window open.
    FormClosing+=(s,e)=> {
+    // 1.9: a setting changed less than a second ago is still written before the window closes
+    if(saveTimer!=null && saveTimer.Enabled && !busy && game!=null) {saveTimer.Stop();try{SaveSettingsSync();}catch(Exception ex){MessageBox.Show(this,"Последнее изменение настроек не сохранено: "+ex.Message,"ReFix");}}
     if(!writing)return;
     e.Cancel=true;
     if(closeRequested)return;
@@ -156,7 +159,7 @@ namespace ReFix {
   TableLayoutPanel SettingsTable(FlowLayoutPanel f) {var t=new TableLayoutPanel{AutoSize=true,ColumnCount=2,Width=690,Margin=new Padding(0,0,0,10)};t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,310));t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,320));f.Controls.Add(t);return t;}
   void Row(TableLayoutPanel table,string text,Control input) {int i=table.RowCount++;table.RowStyles.Add(new RowStyle(SizeType.Absolute,38));var label=Label(text,11,Ink);label.Margin=new Padding(0,3,0,0);table.Controls.Add(label,0,i);table.Controls.Add(input,1,i);}
   void BuildSettings() {
-   var f=Flow(NewPage("Настройки"));f.Controls.Add(Label("Настройки игры",28,Ink));f.Controls.Add(Label("Применяются при следующем запуске. Закройте игру перед сохранением.",11,Muted));
+   var f=Flow(NewPage("Настройки"));f.Controls.Add(Label("Настройки игры",28,Ink));f.Controls.Add(Label("Изменения сохраняются сразу и действуют при следующем запуске игры. Перед изменением закройте игру.",11,Muted));
    var table=SettingsTable(f);
    render=Combo(new Choice("Статическое освещение","renderer_r1"),new Choice("Динамическое объектов","renderer_r2a"),new Choice("Полное динамическое","renderer_r2"));Row(table,"Освещение",render);
    resolution=Combo(new Choice("1280 × 720","1280x720"),new Choice("1600 × 900","1600x900"),new Choice("1920 × 1080","1920x1080"),new Choice("2560 × 1440","2560x1440"),new Choice("3840 × 2160","3840x2160"));Row(table,"Разрешение",resolution);
@@ -168,44 +171,68 @@ namespace ReFix {
    grass=Number(20,60,5,30);Row(table,"Шаг травы (меньше — гуще)",grass);
    gamma=Number(0.5m,1.5m,0.05m,1,2);Row(table,"Гамма",gamma);
    fontSize=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Очень крупный","largest"),new Choice("Изменён вне лаунчера","custom"));Row(table,"Текст интерфейса игры",fontSize);
-   f.Controls.Add(Label("Размер текста Arial/Letterica: диалоги, КПК и другие окна с этими шрифтами. После перезапуска игры. Крупный текст может не помещаться в отдельных окнах. С патчем от 15.10.2026 (3) крупный текст — шрифт Inter (обычное начертание).",10,Muted));
+   f.Controls.Add(Label("Текст в диалогах, КПК и других окнах. Крупный текст набран шрифтом Inter и в отдельных окнах может не помещаться.",10,Muted));
    // 1.9: grass draw distance - pairs of xrRender_R1/R2.dll by the author of the build
    var grassTable=SettingsTable(f);
    grassRadius=Combo(new Choice("Как в сборке (R1 — 49, R2 — 241)",""),new Choice("49 — стандарт ТЧ","049"),new Choice("81","081"),new Choice("121","121"),new Choice("161","161"),new Choice("201","201"),new Choice("241 — как R2 в сборке","241"),new Choice("281","281"),new Choice("321","321"),new Choice("361","361"),new Choice("401 — максимум","401"));
    Row(grassTable,"Дальность травы",grassRadius);
-   f.Controls.Add(Label("Радиус отрисовки травы для статического (R1) и динамического (R2) освещения: варианты рендера от автора сборки. Больше — красивее вдали, но ниже FPS (особенно на R2). Меняются только xrRender_R1/R2.dll, исправленный xrGame.dll не затрагивается. После перезапуска игры.",10,Muted));
-   grassSave=Button("Применить дальность травы",280);grassSave.Click+=async(s,e)=>await Run(async()=> {
-    if(catalog==null)throw new IOException("Сначала проверьте обновления — нужен каталог дополнений.");
-    var asset=catalog.addons.FirstOrDefault(a=>a.id==Grass.AddonId);if(asset==null)throw new IOException("Пакет дальности травы пока не опубликован.");
-    string radius=Selected(grassRadius);if(radius=="")radius=null;
-    string archive=await game.Download(asset);var profiles=Installation.Profiles(game.Root,catalog);
-    status.Text="Установка рендера…";await Task.Run(()=>Grass.Apply(game,archive,radius,profiles));RenderState();
-    status.Text=radius==null?"Рендер сборки возвращён. Перезапустите игру.":"Дальность травы "+radius.TrimStart('0')+" установлена. Перезапустите игру.";
-   });f.Controls.Add(grassSave);
-   fontSave=Button("Применить размер текста",280);fontSave.Click+=async(s,e)=>await Run(async()=>{string preset=Selected(fontSize);await Task.Run(()=>GameFonts.Save(game,preset));status.Text="Размер текста сохранён. Перезапустите игру.";});f.Controls.Add(fontSave);
+   f.Controls.Add(Label("Насколько далеко видна трава. Чем дальше, тем красивее, но ниже FPS — особенно с динамическим освещением. Варианты подготовлены автором сборки; «Как в сборке» возвращает исходные.",10,Muted));
    var ui=SettingsTable(f);
    uiScale=Combo(new Choice("Исходный","original"),new Choice("Крупный","large"),new Choice("Изменён вне лаунчера","custom"));Row(ui,"Масштаб интерфейса",uiScale);
-   f.Controls.Add(Label("Крупный: больше иконки предметов в инвентаре, торговле, ящиках и трупах, крупнее пункты главного меню. За раз видно меньше ячеек, списки прокручиваются. После перезапуска игры. Нужен патч от 15.10.2026.",10,Muted));
-   uiSave=Button("Применить масштаб интерфейса",280);uiSave.Click+=async(s,e)=>await Run(async()=>{string preset=Selected(uiScale);await Task.Run(()=>GameUiScale.Save(game,preset));status.Text="Масштаб интерфейса сохранён. Перезапустите игру.";});f.Controls.Add(uiSave);
+   f.Controls.Add(Label("Крупный: больше иконки предметов в инвентаре, торговле, ящиках и трупах, крупнее пункты главного меню. Ячеек на экране меньше, списки прокручиваются.",10,Muted));
    f.Controls.Add(Label("Персонаж",17,Gold));var actor=SettingsTable(f);
    weight=Number(1,10000,10,30);maximum=Number(1,10000,10,60);speed=Number(0.25m,5,0.05m,1,2);
    Row(actor,"Комфортный вес, кг",weight);Row(actor,"Предельный вес, кг",maximum);Row(actor,"Скорость, × от исходной",speed);
-   f.Controls.Add(Label("Исходные значения: 30 / 60 кг, скорость 1×. Предельный вес должен быть не меньше комфортного.",10,Muted));
+   f.Controls.Add(Label("Исходные значения: 30 и 60 кг, скорость 1×. Предельный вес не бывает меньше комфортного.",10,Muted));
    var loot=SettingsTable(f);
    lootDrop=Combo(new Choice("Как в сборке (много)","mod"),new Choice("Уменьшенный","reduced"),new Choice("Как в оригинальном ТЧ","vanilla"),new Choice("Мусорщик (очень мало)","scavenger"));Row(loot,"Дроп лута с трупов NPC",lootDrop);
-   f.Controls.Add(Label("Как в сборке: костюм почти с каждого, патроны и аптечки 77–88%, артефакты. Уменьшенный: примерно вдвое меньше, костюм в 30%, половина денег. Как в оригинальном ТЧ: без артефактов и костюмов, патроны 10–30%, аптечка 10%. Мусорщик: патроны ~25%, костюм 8%, четверть денег. Нужен патч от 15.10.2026 (4); действует после перезапуска, сохранения не ломает.",10,Muted));
-   save=Button("Сохранить настройки",240);save.Click+=async(s,e)=>await Run(async()=> {
-    var values=new Dictionary<string,string>{{"renderer",Selected(render)},{"vid_mode",Selected(resolution)},{"rs_fullscreen",fullscreen.Checked?"on":"off"},{"rs_v_sync",vsync.Checked?"on":"off"},{"texture_lod",Selected(texture)},{"r__tf_aniso",Selected(aniso)},{"rs_vis_distance",(distance.Value/100).ToString(CultureInfo.InvariantCulture)},{"r__detail_density",(grass.Value/100).ToString(CultureInfo.InvariantCulture)},{"rs_c_gamma",gamma.Value.ToString(CultureInfo.InvariantCulture)}};
-    decimal w=weight.Value,m=maximum.Value,sp=speed.Value;string lootPreset=Selected(lootDrop);
-    if((w<20 || sp<0.5m) && MessageBox.Show(this,"Комфортный вес "+w+" кг, скорость ×"+sp+". Это заметно меньше исходных 30 кг и 1×. Сохранить так?","ReFix — проверка настроек",MessageBoxButtons.YesNo,MessageBoxIcon.Warning)!=DialogResult.Yes){status.Text="Сохранение отменено.";return;}
-    await Task.Run(()=>game.SaveSettings(values,w,m,sp,lootPreset));
-    // 1.9: read back what was written and show it
-    string u=game.ReadConfig("userdata/user.ltx"),l=game.ReadConfig("gamedata/config/bz_lord.ltx");
-    notes.Text="Сохранено:\r\n"+String.Join("\r\n",values.Keys.Select(k=>k+" = "+(Config.Value(u,k)??"?")))+"\r\nКомфортный вес = "+Config.Value(l,"max_weight","bz_lord_inventory")+" кг, предельный = "+Config.Value(l,"max_walk_weight","bz_lord_actor_condition")+" кг, ускорение = "+Config.Value(l,"walk_accel","bz_lord_actor")+", дроп = "+Config.Value(l,"preset","bz_loot")+"\r\n\r\nНастройки графики, изменённые потом в меню игры, игра сама запишет в user.ltx при выходе.";
-    status.Text="Настройки сохранены. Изменения вступят в силу при запуске игры.";
-   });f.Controls.Add(save);
+   f.Controls.Add(Label("Как в сборке: костюм почти с каждого, патроны и аптечки 77–88%, артефакты. Уменьшенный: примерно вдвое меньше, костюм в 30%, половина денег. Как в оригинальном ТЧ: без артефактов и костюмов, патроны 10–30%, аптечка 10%. Мусорщик: патроны ~25%, костюм 8%, четверть денег. Сохранения не ломает.",10,Muted));
+   // 1.9: every change is saved by itself: game settings after a short pause (typing a number), the rest at once
+   saveTimer=new System.Windows.Forms.Timer{Interval=700};saveTimer.Tick+=async(s,e)=>{saveTimer.Stop();if(busy){saveTimer.Start();return;}await SaveSettingsNow();};
+   foreach(var c in new Control[]{render,resolution,texture,aniso,lootDrop}) ((ComboBox)c).SelectedIndexChanged+=(s,e)=>QueueSave();
+   foreach(var c in new[]{fullscreen,vsync}) c.CheckedChanged+=(s,e)=>QueueSave();
+   foreach(var n in new[]{distance,grass,gamma,weight,maximum,speed}) n.ValueChanged+=(s,e)=>QueueSave();
+   fontSize.SelectedIndexChanged+=async(s,e)=>{if(loading||game==null)return;string preset=Selected(fontSize);if(preset=="custom")return;
+    await Apply(async()=>{await Task.Run(()=>GameFonts.Save(game,preset));status.Text="Размер текста сохранён. Перезапустите игру.";},()=>Select(fontSize,GameFonts.Current(game)));};
+   uiScale.SelectedIndexChanged+=async(s,e)=>{if(loading||game==null)return;string preset=Selected(uiScale);if(preset=="custom")return;
+    await Apply(async()=>{await Task.Run(()=>GameUiScale.Save(game,preset));status.Text="Масштаб интерфейса сохранён. Перезапустите игру.";},()=>Select(uiScale,GameUiScale.Current(game)));};
+   grassRadius.SelectedIndexChanged+=async(s,e)=>{if(loading||game==null)return;
+    await Apply(async()=> {
+     if(catalog==null)throw new IOException("Сначала проверьте обновления — нужен каталог дополнений.");
+     var asset=catalog.addons.FirstOrDefault(a=>a.id==Grass.AddonId);if(asset==null)throw new IOException("Пакет дальности травы пока не опубликован.");
+     string radius=Selected(grassRadius);if(radius=="")radius=null;
+     if(radius==game.State.grass)return;
+     string archive=await game.Download(asset);var profiles=Installation.Profiles(game.Root,catalog);
+     status.Text="Установка рендера…";await Task.Run(()=>Grass.Apply(game,archive,radius,profiles));
+     status.Text=radius==null?"Рендер сборки возвращён. Перезапустите игру.":"Дальность травы "+radius.TrimStart('0')+" установлена. Перезапустите игру.";
+    },()=>Select(grassRadius,game.State.grass??""));};
   }
   static string Selected(ComboBox c){return ((Choice)c.SelectedItem).Value;}
+  void QueueSave(){if(loading||game==null)return;saveTimer.Stop();saveTimer.Start();status.Text="Сохранение настроек…";}
+  // runs a change; if it fails (game running, no network...) the control shows the value that is really in effect
+  async Task Apply(Func<Task> action,Action revert) {
+   if(busy){status.Text="Дождитесь окончания текущей операции.";Revert(revert);return;}
+   bool ok=false;await Run(async()=>{await action();ok=true;});
+   if(!ok)Revert(revert);
+  }
+  void Revert(Action revert){loading=true;try{revert();}catch{}finally{loading=false;}}
+  Dictionary<string,string> GraphicsValues() {
+   return new Dictionary<string,string>{{"renderer",Selected(render)},{"vid_mode",Selected(resolution)},{"rs_fullscreen",fullscreen.Checked?"on":"off"},{"rs_v_sync",vsync.Checked?"on":"off"},{"texture_lod",Selected(texture)},{"r__tf_aniso",Selected(aniso)},{"rs_vis_distance",(distance.Value/100).ToString(CultureInfo.InvariantCulture)},{"r__detail_density",(grass.Value/100).ToString(CultureInfo.InvariantCulture)},{"rs_c_gamma",gamma.Value.ToString(CultureInfo.InvariantCulture)}};
+  }
+  void SaveSettingsSync() {
+   decimal w=weight.Value,m=Math.Max(maximum.Value,weight.Value);
+   game.SaveSettings(GraphicsValues(),w,m,speed.Value,Selected(lootDrop));
+  }
+  async Task SaveSettingsNow() {
+   if(game==null)return;
+   if(maximum.Value<weight.Value){loading=true;maximum.Value=weight.Value;loading=false;}   // the limit follows the comfortable weight
+   var values=GraphicsValues();
+   decimal w=weight.Value,m=maximum.Value,sp=speed.Value;string lootPreset=Selected(lootDrop);
+   bool ok=false;
+   await Run(async()=>{await Task.Run(()=>game.SaveSettings(values,w,m,sp,lootPreset));ok=true;});
+   if(ok)status.Text="Сохранено: вес "+w+"/"+m+" кг, скорость ×"+sp+", дальность "+distance.Value+"%. Действует при следующем запуске игры.";
+   else LoadSettings();
+  }
   static void Select(ComboBox c,string value){var match=c.Items.Cast<Choice>().FirstOrDefault(x=>x.Value==value);if(match==null){match=new Choice(value,value);c.Items.Add(match);}c.SelectedItem=match;}
   static decimal ReadNumber(string text,string key,decimal fallback,string section=null){decimal d;return Decimal.TryParse(Config.Value(text,key,section),NumberStyles.Float,CultureInfo.InvariantCulture,out d)?d:fallback;}
   static void SetNumber(NumericUpDown input,decimal value){input.Value=Math.Max(input.Minimum,Math.Min(input.Maximum,value));}
@@ -220,26 +247,34 @@ namespace ReFix {
     status.Text=pending?"Возврат файлов после прерванной установки…":"Очистка временных файлов лаунчера…";
     try{await Task.Run(()=>game.Recover());}finally{busy=false;}
     if(pending)game.Log("RECOVERED_ON_START");
+    LoadSettings();
+    RenderState();status.Text=pending?"Прерванная установка отменена, файлы возвращены.":"Папка игры выбрана.";
+   }catch(Exception ex){game=null;location.Text="Папка игры не выбрана";Error(ex);}EnableActions();
+  }
+  // values from user.ltx / bz_lord.ltx / font and UI state without triggering the auto-save
+  void LoadSettings() {
+   if(game==null)return;
+   loading=true;
+   try {
     string u=game.ReadConfig("userdata/user.ltx"),l=game.ReadConfig("gamedata/config/bz_lord.ltx");
     Select(render,Config.Value(u,"renderer")??"renderer_r1");Select(resolution,Config.Value(u,"vid_mode")??"1920x1080");Select(texture,Config.Value(u,"texture_lod")??"0");Select(aniso,Config.Value(u,"r__tf_aniso")??"4");
     fullscreen.Checked=(Config.Value(u,"rs_fullscreen")??"on")=="on";vsync.Checked=Config.Value(u,"rs_v_sync")=="on";
     SetNumber(distance,ReadNumber(u,"rs_vis_distance",1)*100);SetNumber(grass,ReadNumber(u,"r__detail_density",0.3m)*100);SetNumber(gamma,ReadNumber(u,"rs_c_gamma",1));
     Select(lootDrop,Config.Value(l,"preset","bz_loot")??"mod");SetNumber(weight,ReadNumber(l,"max_weight",30,"bz_lord_inventory"));SetNumber(maximum,ReadNumber(l,"max_walk_weight",60,"bz_lord_actor_condition"));SetNumber(speed,ReadNumber(l,"walk_accel",17,"bz_lord_actor")/17);
     Select(fontSize,GameFonts.Current(game));Select(uiScale,GameUiScale.Current(game));
-    RenderState();status.Text=pending?"Прерванная установка отменена, файлы возвращены.":"Папка игры выбрана.";
-   }catch(Exception ex){game=null;location.Text="Папка игры не выбрана";Error(ex);}EnableActions();
+   } finally { loading=false; }
   }
   void RenderState() {
    version.Text=installation==null?"Версия: проверка файлов…":installation.Title;
    if(catalog!=null)version.Text+="  ·  доступны: "+catalog.version;
-   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.FirstOrDefault(id=>id.StartsWith("optional_season_"))??"");Select(grassRadius,game.State.grass??"");minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");textures.Checked=ids.Contains(TexturesAddon);
+   var ids=game.State.addons.Select(a=>a.id).ToList();Select(season,ids.FirstOrDefault(id=>id.StartsWith("optional_season_"))??"");loading=true;try{Select(grassRadius,game.State.grass??"");}finally{loading=false;}minimal.Checked=ids.Contains("optional_minimal_hud");newHud.Checked=ids.Contains("optional_new_hud");textures.Checked=ids.Contains(TexturesAddon);
   }
   void EnableActions() {
-   choose.Enabled=!busy;refresh.Enabled=!busy&&game!=null;play.Enabled=!busy&&game!=null;save.Enabled=!busy&&game!=null;addonsButton.Enabled=!busy&&game!=null&&catalog!=null;
+   choose.Enabled=!busy;refresh.Enabled=!busy&&game!=null;play.Enabled=!busy&&game!=null;addonsButton.Enabled=!busy&&game!=null&&catalog!=null;
    update.Enabled=!busy&&game!=null&&catalog!=null&&(installation==null||installation.PatchHash!=catalog.patch.sha256);
    install.Enabled=!busy&&game!=null&&prepared!=null;
-   verify.Enabled=!busy&&game!=null;fontSave.Enabled=!busy&&game!=null;grassSave.Enabled=!busy&&game!=null&&catalog!=null;
-   cancelOp.Visible=busy&&cts!=null;cancelOp.Enabled=cts!=null&&!cts.IsCancellationRequested;uiSave.Enabled=!busy&&game!=null&&GameUiScale.Available(game);
+   verify.Enabled=!busy&&game!=null;fontSize.Enabled=game!=null;grassRadius.Enabled=game!=null&&catalog!=null;uiScale.Enabled=game!=null&&GameUiScale.Available(game);
+   cancelOp.Visible=busy&&cts!=null;cancelOp.Enabled=cts!=null&&!cts.IsCancellationRequested;
     selfUpdate.Visible=selfAvailable&&catalog!=null;selfUpdate.Enabled=!busy&&selfAvailable&&catalog!=null;
   }
   // 1.9: one operation at a time; long ones can be cancelled ("Отмена" / closing the window), the transaction is rolled back
