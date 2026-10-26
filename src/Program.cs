@@ -31,7 +31,7 @@ namespace ReFix {
  public class MainForm:Form {
   static readonly Color Bg=Color.FromArgb(19,23,23), Card=Color.FromArgb(29,35,34), Gold=Color.FromArgb(204,173,100), Ink=Color.FromArgb(229,233,225), Muted=Color.FromArgb(163,175,166);
   Panel page; Label status,location,version,addonsCheck; TextBox notes;
-  Button update,install,verify,selfUpdate,play,addonsButton,choose,refresh;
+  Button update,install,verify,selfUpdate,play,addonsButton,choose,refresh,crash;
   bool selfAvailable;
   InstallationReport installation;
   ComboBox fontSize,uiScale;
@@ -132,6 +132,7 @@ namespace ReFix {
     status.Text="Установка обновления…";await Task.Run(()=>game.InstallPreparedPatch(prepared));prepared=null;await Inspect();RenderState();status.Text="Обновление установлено. Проверка файлов завершена.";
    });f.Controls.Add(install);
    verify=Button("Проверить установку",280);verify.Click+=async(s,e)=>await Run(async()=>{await Inspect(true);RenderState();notes.Text=installation.Title+"\r\nПроверено файлов патча: "+installation.Checked+"\r\n\r\n"+(installation.Differences.Count==0?"Файлы соответствуют эталону.":String.Join("\r\n",installation.Differences));status.Text="Проверка установки завершена.";});f.Controls.Add(verify);
+   crash=Button("Собрать данные о вылете",280);crash.Click+=async(s,e)=>await CollectCrash();f.Controls.Add(crash);
    selfUpdate=Button("Обновить лаунчер",280);selfUpdate.Visible=false;selfUpdate.Click+=async(s,e)=>await UpdateLauncher();f.Controls.Add(selfUpdate);
    f.Controls.Add(Label("Новости сборки",17,Ink));
    notes=new TextBox{Multiline=true,ReadOnly=true,BorderStyle=BorderStyle.None,BackColor=Card,ForeColor=Ink,Width=700,Height=245,ScrollBars=ScrollBars.Vertical,Text="Проверка GitHub выполняется при каждом запуске.\r\nПри отсутствии сети можно продолжить игру."};f.Controls.Add(notes);
@@ -273,7 +274,7 @@ namespace ReFix {
    choose.Enabled=!busy;refresh.Enabled=!busy&&game!=null;play.Enabled=!busy&&game!=null;addonsButton.Enabled=!busy&&game!=null&&catalog!=null;
    update.Enabled=!busy&&game!=null&&catalog!=null&&(installation==null||installation.PatchHash!=catalog.patch.sha256);
    install.Enabled=!busy&&game!=null&&prepared!=null;
-   verify.Enabled=!busy&&game!=null;fontSize.Enabled=game!=null;grassRadius.Enabled=game!=null&&catalog!=null;uiScale.Enabled=game!=null&&GameUiScale.Available(game);
+   verify.Enabled=!busy&&game!=null;crash.Enabled=!busy&&game!=null;fontSize.Enabled=game!=null;grassRadius.Enabled=game!=null&&catalog!=null;uiScale.Enabled=game!=null&&GameUiScale.Available(game);
    cancelOp.Visible=busy&&cts!=null;cancelOp.Enabled=cts!=null&&!cts.IsCancellationRequested;
     selfUpdate.Visible=selfAvailable&&catalog!=null;selfUpdate.Enabled=!busy&&selfAvailable&&catalog!=null;
   }
@@ -306,6 +307,27 @@ namespace ReFix {
     var selected=new Dictionary<string,string>();foreach(string id in ids){var a2=catalog.addons.FirstOrDefault(a=>a.id==id);if(a2==null)throw new IOException("Дополнение пока не опубликовано: "+id);selected[id]=await game.Download(a2);}
     status.Text="Установка дополнений…";await Task.Run(()=>game.ApplyAddons(selected));await Inspect();RenderState();status.Text="Дополнение «Оптимизация текстур» установлено.";
    });
+  }
+  // 1.10: a crash without a log - offer to turn on Windows dumps, then pack dumps, logs and the newest save to the desktop
+  async Task CollectCrash() {
+   if(busy || game==null)return;
+   if(!CrashReport.DumpsEnabled()) {
+    var answer=MessageBox.Show(this,"Запись дампов вылетов для игры не включена. При вылете без лога только дамп показывает, где упала игра.\n\nВключить сейчас? Windows попросит права администратора. После этого воспроизведите вылет и нажмите кнопку ещё раз.\n\n«Нет» — собрать то, что есть.","ReFix — вылет",MessageBoxButtons.YesNoCancel,MessageBoxIcon.Question);
+    if(answer==DialogResult.Cancel)return;
+    if(answer==DialogResult.Yes) {
+     try{if(!CrashReport.EnableDumps()){status.Text="Включение дампов отменено.";return;}game.Log("CRASH_DUMPS_ON");}catch(Exception ex){Error(ex);return;}
+    }
+   }
+   await Run(async()=> {
+    status.Text="Сбор данных о вылете…";
+    string info="Лаунчер "+SelfUpdate.VersionString+"\r\nСборка: "+(installation!=null?installation.Title:game.State.version)+"\r\nДополнения: "+(game.State.addons.Count==0?"нет":String.Join(", ",game.State.addons.Select(a=>a.id)))+(game.State.grass!=null?"\r\nТрава: "+game.State.grass:"")+"\r\nWindows: "+Environment.OSVersion+(Environment.Is64BitOperatingSystem?" x64":" x86")+"\r\nЗапись дампов: "+(CrashReport.DumpsEnabled()?"включена":"не включена")+"\r\nСобрано: "+DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+    string zip=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),"BZ_crash_"+DateTime.Now.ToString("yyyyMMdd_HHmmss")+".zip");
+    var r=await Task.Run(()=>CrashReport.Collect(game.Root,CrashReport.DumpDir,zip,info,CrashReport.Events()));
+    game.Log("CRASH_REPORT","dumps="+r.Dumps+"; logs="+r.Logs+"; save="+(r.Save??"-"));
+    notes.Text="Архив сохранён: "+zip+"\r\nДампов: "+r.Dumps+", логов: "+r.Logs+", сейв: "+(r.Save??"нет")+".\r\n\r\n"+(r.Dumps==0?"Дампов нет. Включите их этой же кнопкой, воспроизведите вылет и соберите архив снова.\r\n\r\n":"")+"Отправьте архив автору сборки. В нём последний по времени сейв — если игра падает на другом, приложите его отдельно.";
+    status.Text="Данные о вылете собраны: "+Path.GetFileName(zip)+" на Рабочем столе.";
+    try{System.Diagnostics.Process.Start("explorer.exe","/select,\""+zip+"\"");}catch{}
+   },false);
   }
   async Task Inspect(bool withAddons=false) {status.Text="Проверка установленных файлов…";var profiles=Installation.Profiles(game.Root,catalog);installation=await Task.Run(()=>Installation.Verify(game.Root,game.State,profiles,withAddons));game.Log("INSTALLATION_CHECK",installation.Title+"; differences="+installation.Differences.Count);}
   async Task UpdateLauncher() {

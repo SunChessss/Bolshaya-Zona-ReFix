@@ -86,7 +86,7 @@ class Tests {
   Check(Installation.Verify(game,known).Differences.Count==1,"detect changed installation despite recorded version");
   known[0].files.Add(new FileRow{file="gamedata/missing",sha256=new string('a',64)});
   Check(Installation.Verify(game,known).Differences.Count==2,"report missing and changed files separately");
-  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.25.1" && Installation.Profiles()[0].files.Count==221 && Installation.Profiles()[1].version=="2026.10.23.5" && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
+  Check(Installation.Profiles().Count>=4 && Installation.Profiles()[0].version=="2026.10.26.1" && Installation.Profiles()[0].files.Count==222 && Installation.Profiles()[1].version=="2026.10.25.1" && Installation.Profiles().Exists(x=>x.files.Count==59),"embedded current and pre-patch profiles available offline");
   // 1.4: reference profiles published in the release catalog, cached for offline checks
   Data.Atomic(Data.Safe(root,"gamedata/config/ui/test.xml"),Encoding.ASCII.GetBytes("catalog build"));
   var fresh=new InstallProfile{title="Catalog release",version="2099.1.1.1",patchHash=new string('c',64),files=new List<FileRow>{new FileRow{file="gamedata/config/ui/test.xml",sha256=Data.HashFile(Data.Safe(root,"gamedata/config/ui/test.xml"))}}};
@@ -257,6 +257,24 @@ class Tests {
   string pr=Package("patchrender",new Dictionary<string,string>{{"bin/xrRender_R2.dll","patched R2"}});
   game.ApplyPatch(pr,"2026.10.18.2",new string('f',64));
   Check(game.State.grass==null && game.State.grassOriginal.Count==0 && Text("bin/xrRender_R2.dll")=="patched R2","1.9: a patch with a renderer resets the grass choice");
+  // 1.10: crash report
+  string dumps=Data.Safe(root,"crashdumps");Directory.CreateDirectory(dumps);
+  for(int i=0;i<3;i++){string d=Path.Combine(dumps,"XR_3DA.exe."+i+".dmp");File.WriteAllText(d,"dump"+i);File.SetLastWriteTimeUtc(d,DateTime.UtcNow.AddMinutes(i));}
+  File.WriteAllText(Path.Combine(dumps,"other.exe.1.dmp"),"x");
+  Data.Atomic(Data.Safe(root,"userdata/logs/xray_test.log"),Encoding.ASCII.GetBytes("log"));
+  Data.Atomic(Data.Safe(root,"userdata/savedgames/old.sav"),new byte[]{1});File.SetLastWriteTimeUtc(Data.Safe(root,"userdata/savedgames/old.sav"),DateTime.UtcNow.AddDays(-1));
+  Data.Atomic(Data.Safe(root,"userdata/savedgames/quicksave.sav"),new byte[]{2});Data.Atomic(Data.Safe(root,"userdata/savedgames/quicksave.dds"),new byte[]{3});
+  string crashZip=Data.Safe(root,"out/crash.zip");
+  var cr=CrashReport.Collect(root,dumps,crashZip,"info","events");
+  using(var z=ZipFile.OpenRead(crashZip)) {
+   var names=z.Entries.Select(x=>x.FullName).ToList();
+   Check(cr.Dumps==2 && names.Contains("dumps/XR_3DA.exe.2.dmp") && names.Contains("dumps/XR_3DA.exe.1.dmp") && !names.Any(n=>n.Contains("other.exe")),"1.10: crash report takes the two newest game dumps");
+   Check(names.Contains("logs/xray_test.log") && names.Contains("save/quicksave.sav") && names.Contains("save/quicksave.dds") && !names.Contains("save/old.sav") && cr.Save=="quicksave.sav","1.10: crash report has logs and the newest save");
+   Check(names.Contains("info.txt") && names.Contains("events_1000.txt") && names.Contains("launcher/operations.log"),"1.10: crash report has info, events and the launcher log");
+  }
+  using(var open=new FileStream(Data.Safe(root,"userdata/logs/xray_test.log"),FileMode.Open,FileAccess.ReadWrite,FileShare.ReadWrite))
+   Check(CrashReport.Collect(root,dumps,crashZip,"info","events").Logs==1,"1.10: crash report reads a log the game keeps open");
+  Check(CrashReport.Collect(root,Data.Safe(root,"no-dumps"),crashZip,"info","events").Dumps==0,"1.10: crash report without dumps");
+  Check(!string.IsNullOrEmpty(CrashReport.Events()),"1.10: Windows events query does not fail");
  }
 }
-
