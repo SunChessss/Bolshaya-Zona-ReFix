@@ -1,5 +1,1008 @@
 [
  {
+  "version": "2026.10.29.1",
+  "title": "ReFix 29.10.2026 — выброс с укрытием, коды от дверей в КПК, «Повелитель Зоны», Лабиринт",
+  "patchHash": "d47e0f5fecd09d741894d6633de1fb15856af9d5976fff56e58a5ed60d9bdd0b",
+  "files": [
+   {
+    "file": "bin/xrGame.dll",
+    "sha256": "9b5a3e8f4f38d8b9d3ddd6e54f4049c636e85a3e59648834d8c31e2f56cbe569"
+   },
+   {
+    "file": "gamedata/config/creatures/bz_ps_sidor.ltx",
+    "sha256": "8a57a811242059cb5cce4726301ac98c37b1ee31e84ecea3dd0ebe995ff71741"
+   },
+   {
+    "file": "gamedata/config/creatures/helicopter.ltx",
+    "sha256": "ade6d8f529d3156264d2447c351efb72511af9c151587c011a85a4ae184b0c19"
+   },
+   {
+    "file": "gamedata/config/creatures/m_poltergeist.ltx",
+    "sha256": "714bc54e66fdc02ac7cca20b424f525d764faf831815b8e12883d3de5951cec8"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_bandit.xml",
+    "sha256": "d86e4dae3165e642677ad7c134432a416edc426d41f477c14f176d05db8541ae"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_bar.xml",
+    "sha256": "fc34b8b9be93911a2d2742e0fa3c65b5f5209731a5107ac86dca1c4087ee69e1"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_dar.xml",
+    "sha256": "cf6c44814fd2c9d9e6ce8f51966afa6b6f5c710e55d425d7eee3782fb27dc6c7"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_dolg.xml",
+    "sha256": "46685a70f4d6ba65e2d075a6a10953d122f2a78281be6a8a160190391b438eb5"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_ecolog.xml",
+    "sha256": "3c998968a6849dd37d9870dd883c3f3ca4413eddbc1f8cbc67aceea3bdee8fef"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_escape.xml",
+    "sha256": "ece08eb65bdd2731b5861042d04db6c70c1eff41d31065ead01dd5411c2fee44"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_garbage.xml",
+    "sha256": "0fed9bebe562bb47fb6855bbcb9a82431a36e10853e15768c0e7350ea81f70df"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_killer.xml",
+    "sha256": "f42f5abd6123f5b24360ae1b03ea86c2a58d8c0f54f5d45a3e35cd95f223ec25"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_military.xml",
+    "sha256": "23df9455946dbdb6edde46ffe3d5cf182a5e491dc51ca59ed4ffeffc41b8e833"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_monolit.xml",
+    "sha256": "372ced315a034e6eb33908899e44912b044d580e0c313f1a410f14634c2d6a07"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_simulation.xml",
+    "sha256": "c7ddc2c00e6d1211d0e8d92eba7dd3964985526ed504f614ce8ba3c6342afd22"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_soldier.xml",
+    "sha256": "ed4799289f3e3452b12f973d9eee302946cdfc780ca4acaf25134f0ee6c7d9a9"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_stalker.xml",
+    "sha256": "d0e93c0abb40387a81417c919888865bc7941ef82e3a356d35ecdaf3168eb60d"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_svoboda.xml",
+    "sha256": "37232443e2e8035318fa5415298a62c6eab78fdc304ee934959beb2f13e29ea7"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_unic.xml",
+    "sha256": "29c587f54f1679717d7c599da5f2d2e3e8e81c8e77626ed7340686e27d4b83d9"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_yantar.xml",
+    "sha256": "1261d5b4d2b923665963a2de31b15020155eef94563f814da8c7858c08ef0898"
+   },
+   {
+    "file": "gamedata/config/gameplay/character_desc_zombied.xml",
+    "sha256": "b797f8eccdea830d6758a2b4a821726d5f581447e5939eca079acf84db5519e9"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_bar.xml",
+    "sha256": "8f822eb17d68ad7309e2409d13cab0fae752239f1eee27b886aa2e2d7e6e8002"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_bz_rep.xml",
+    "sha256": "e1a8853dc461bc9158c156cd82e86d02c6c2bf2df9fb8f183745919467a66c4a"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_dd.xml",
+    "sha256": "ec727a4803363a14190e53792bc5464fe0140b751b417c19ebe032e96b9f5bd1"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_escape.xml",
+    "sha256": "1544ccd767f834a6380bf7f3fc3d1b2de82da929f3f8126b231ce1c8088f6917"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_garbage.xml",
+    "sha256": "5ab64058433e357083daab9f75426b1ec300964639cca73b6661635f9ec781b9"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_kras.xml",
+    "sha256": "6a4dea9dead9e05336537bfb28d1b5d1819a985d658b44f8ce92a7a66c827b12"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_military.xml",
+    "sha256": "e7569de83e14417d182024b5db2bc6ee122f124d06ec669790f953888445b86d"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_pogost.xml",
+    "sha256": "6041ec202b4a712c5feb188b3e4dae82446f6948feaee2c1ab4b4e90d5f509be"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_repair.xml",
+    "sha256": "23248f1993c9aaaac9d73035b278da83aab6b2401c687d8eafb7bfad7a37814d"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_unic.xml",
+    "sha256": "b085b5c7735b59d93d362d207122311a61c36ac92b555631dbe28900a42d1ceb"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_xmk.xml",
+    "sha256": "674ba830f72b4294283277e51ecd1a725735a3cc2531d6a87122adb0108dcfe8"
+   },
+   {
+    "file": "gamedata/config/gameplay/dialogs_yantar.xml",
+    "sha256": "10087b18339a06d5e171842a72c7445acffa032ff276bbb1745fff4829ecdd7e"
+   },
+   {
+    "file": "gamedata/config/gameplay/encyclopedia_bz_codes.xml",
+    "sha256": "fe0538a8041ee40354fedd48f7a36110eed9836c91cc134cb221a52882e7c3d8"
+   },
+   {
+    "file": "gamedata/config/gameplay/encyclopedia_bz_notes.xml",
+    "sha256": "ba3432d3020f0a0eb3ec6650d0bb152f002be47cab757158149893d157642c4d"
+   },
+   {
+    "file": "gamedata/config/gameplay/game_tasks.xml",
+    "sha256": "6e91db9a98ec637a4f06d9d097eea5e8364df3c6a6ab4137fd88feca9a72f97a"
+   },
+   {
+    "file": "gamedata/config/gameplay/info_unic.xml",
+    "sha256": "3db5a0d6837db2c5bdcc7208fc09352e69b84ed3faa120fea391b2849b389127"
+   },
+   {
+    "file": "gamedata/config/gameplay/npc_profile.xml",
+    "sha256": "78b7f459659cbf95495915be7c748e1620582855d437361560d22a72794c2adf"
+   },
+   {
+    "file": "gamedata/config/gameplay/storyline_info_to_diary.xml",
+    "sha256": "45ef353a0eaa451ac68a9e7c33c996be444ea9890fa4f8b8ec4b73ffceb58299"
+   },
+   {
+    "file": "gamedata/config/gameplay/tasks_bar.xml",
+    "sha256": "66ad2ad15adaebedb665f42fca93cfb2f5a6f555c3d0920fde50c97df529d5d0"
+   },
+   {
+    "file": "gamedata/config/gameplay/tasks_bz_ps.xml",
+    "sha256": "e64977852a95a239decf49cee960e0346c95377068bd605978b45061681329cf"
+   },
+   {
+    "file": "gamedata/config/gameplay/tasks_bz_rep.xml",
+    "sha256": "e8bef9f5a0db5b1c7b54def01a4ba114c3bbed873f82352e3878c02713e745c1"
+   },
+   {
+    "file": "gamedata/config/gameplay/tasks_bz_surge.xml",
+    "sha256": "3e40cd55411dceb5ab4012d42f6dbe82e0d0c4fa81e020a6408980f98f319dcc"
+   },
+   {
+    "file": "gamedata/config/gameplay/tasks_unic.xml",
+    "sha256": "0615420bc745a5f7e061371e9f742c57e8cfe2dd36ec79935468ff575c64d0d1"
+   },
+   {
+    "file": "gamedata/config/gameplay/tasks_yantar.xml",
+    "sha256": "8a5deab62b23027d2c2b88ec036b2e0d113db39c837fc847b24aba6f1bcc383a"
+   },
+   {
+    "file": "gamedata/config/misc/ddd_trader.ltx",
+    "sha256": "863eb84b5dde459b00e18d4bebe6f5426e18c34f50fd044b220c0c84632313e3"
+   },
+   {
+    "file": "gamedata/config/misc/death_generic.ltx",
+    "sha256": "9e8df31ef325d535de89eb889a83e7721cce0f352cbe9e950b4412bf12b2f42e"
+   },
+   {
+    "file": "gamedata/config/misc/death_items_bz_presets.ltx",
+    "sha256": "3d27142575b8aa989cce8412121fb745b1b5e33b7d34fabad4f9eb2118855927"
+   },
+   {
+    "file": "gamedata/config/misc/gulag_bar.ltx",
+    "sha256": "42bdeaee1b88aa0ec509c2b39587254bbd41b6bcf5866a79951f6d740b393ea5"
+   },
+   {
+    "file": "gamedata/config/misc/gulag_garbage.ltx",
+    "sha256": "c7f4846be31ae88b11a24435b65fb24785fd2934c791696005b4d395d0a1ed02"
+   },
+   {
+    "file": "gamedata/config/misc/gulag_mil_fblockpost.ltx",
+    "sha256": "f214637fc10798956f04b513e686b6d919bf7e90c3b5080f7f14f922e503a71e"
+   },
+   {
+    "file": "gamedata/config/misc/gulag_mil_freedom3.ltx",
+    "sha256": "ebfd67528c2dbcfc854e898c4192378ebee3a02711c0ace8a718b2e4c7e3b134"
+   },
+   {
+    "file": "gamedata/config/misc/gulag_yantar.ltx",
+    "sha256": "0cd9c565e437686a785adbfe83cfcdc4d2f3d017a8ade1a6b8b22b1b51ff3303"
+   },
+   {
+    "file": "gamedata/config/misc/items.ltx",
+    "sha256": "36cc45b48f41fc29428558f5a8a56328e61edcd478b101a977a4a07086c4fa96"
+   },
+   {
+    "file": "gamedata/config/misc/outfit.ltx",
+    "sha256": "c550c21f8193f25e9fd4eb8a0efe238f8283960b9b585cb3f7ccf070ab5ed8ff"
+   },
+   {
+    "file": "gamedata/config/misc/quest_items.ltx",
+    "sha256": "c4dd20bc0ad97ad5b66aedc1ae7822a843d9552a1d86fb8e9a12c1774b5536b2"
+   },
+   {
+    "file": "gamedata/config/misc/task_manager.ltx",
+    "sha256": "1e843be5d1939df22afe7374370250db8a1ca4980cb86d771cef88ed391309ef"
+   },
+   {
+    "file": "gamedata/config/misc/trade_artem.ltx",
+    "sha256": "aa0676ef90bf0b942baa7cf9a3f6ca8c9e7c487f76bb19f4c31023c70c7ea9d4"
+   },
+   {
+    "file": "gamedata/config/misc/trade_barman.ltx",
+    "sha256": "a7af67ffdaa5b78d78cb1a74e8e4df1c315e55aa639745154bd3497860da8bcd"
+   },
+   {
+    "file": "gamedata/config/misc/trade_dolg.ltx",
+    "sha256": "a2853327f658497ab994f8606bf0c1cb2898c0efc9b96a29684ebfb4df3a6de8"
+   },
+   {
+    "file": "gamedata/config/misc/trade_ecolog.ltx",
+    "sha256": "e010b253d125ba0080cc4ab41c5f1aec8b547f07055ce515a4fd86bb93b625d0"
+   },
+   {
+    "file": "gamedata/config/misc/trade_freedom.ltx",
+    "sha256": "dd16b60321e5459a27425466d24521a56b1327f7152fe3ac91cb30b2f2a277a8"
+   },
+   {
+    "file": "gamedata/config/misc/trade_generic.ltx",
+    "sha256": "63dd82e6fff669bf0f1b54f24dee7b36f5d750cd3e704579be1f31a8bca5c682"
+   },
+   {
+    "file": "gamedata/config/misc/trade_holodov.ltx",
+    "sha256": "21da6e3c46dba4056e188310326beba9bef604771045dd5ad942dbbc050d032b"
+   },
+   {
+    "file": "gamedata/config/misc/trade_krohobor.ltx",
+    "sha256": "38bae942fef07ddf962f7dad811b1964d652647fac10b396ab55cc507e4eb915"
+   },
+   {
+    "file": "gamedata/config/misc/trade_marsh_remont.ltx",
+    "sha256": "8ae033e6a958ec14df3775f65b410d7fa5cfd6a0e8a77003fe5d820fbc4e2ea6"
+   },
+   {
+    "file": "gamedata/config/misc/trade_predbannik_barman.ltx",
+    "sha256": "230fbad4b5a6ec1d971e76c6fc9b370fc1d4fadc75131d838526da95833da25d"
+   },
+   {
+    "file": "gamedata/config/misc/trade_suprun.ltx",
+    "sha256": "f063eba80c90520d904800b07f58e41179d843a06e6f2100e7d5d6325a52d3fb"
+   },
+   {
+    "file": "gamedata/config/misc/trade_trader.ltx",
+    "sha256": "70fdd14c8b3c2ea3c1e4852b2bf06316720e2311ba06648e789c5b12aa58b73c"
+   },
+   {
+    "file": "gamedata/config/misc/trade_voron.ltx",
+    "sha256": "67e6652a07a4e672981e20f34127a6aefe7f21179e813186c87134d2e6503983"
+   },
+   {
+    "file": "gamedata/config/misc/trade_wereskov.ltx",
+    "sha256": "9e05c3415f35b85ca6f337d4363b542771f77ab7b8b7dad23d9ecbb83c6c1a10"
+   },
+   {
+    "file": "gamedata/config/misc/trade_zaton_bill.ltx",
+    "sha256": "e060c42ab5965a7493b414793dae722c2278743afc98f66d26addd7f95ea0da1"
+   },
+   {
+    "file": "gamedata/config/misc/trade_zaton_such.ltx",
+    "sha256": "1404d295de41e73210ce1245e00ef7f66452b7e8ab4275538c4fa03d2b42c81e"
+   },
+   {
+    "file": "gamedata/config/misc/trade_zaton_tremor.ltx",
+    "sha256": "8737a50c415cfcd3844aa7f57100cab4a2e48df40abbb11698c62c9ce9410e10"
+   },
+   {
+    "file": "gamedata/config/misc/trade_zemlyk.ltx",
+    "sha256": "686f06a9561934f2396309191e9e67e788231138d2cb6968960ca8e19a0dfb86"
+   },
+   {
+    "file": "gamedata/config/misc/treasure_manager.ltx",
+    "sha256": "18ba8efe8a841eb56c618a554ddc85841a2e253624a4892002d1e12a587e5876"
+   },
+   {
+    "file": "gamedata/config/misc/unique_items.ltx",
+    "sha256": "bc0f31114201a07b0e17a03dd7062a21379dbde3574c3b404b5e706a4d2df9ae"
+   },
+   {
+    "file": "gamedata/config/misc/xmk_trader1.ltx",
+    "sha256": "99dbe7469fd45a6095cc1391af980f38993f0447196b8bfe9245e554262abc86"
+   },
+   {
+    "file": "gamedata/config/misc/xmk_trader2.ltx",
+    "sha256": "cc593b5124dfc39a645fb78064a3e4e93df2acbeb7860b9610bbbe2e0f5ae8bf"
+   },
+   {
+    "file": "gamedata/config/models/vehicles/veh_mi24_u_01.ltx",
+    "sha256": "afbe774e45cecef4e6a68fab64ed7e5f5ba7698562718b56e6a4d96309810426"
+   },
+   {
+    "file": "gamedata/config/scripts/bz_ps_sidor.ltx",
+    "sha256": "d9cc817c6a51778448d26922b3d35c6a0a7c9ef02234deac0b056b9039108413"
+   },
+   {
+    "file": "gamedata/config/scripts/ds/ds_heli.ltx",
+    "sha256": "c4b608d459a797221bff948ca2a8e0966ace1d15048eb89e7d1921d798081f26"
+   },
+   {
+    "file": "gamedata/config/scripts/sar_monolith.ltx",
+    "sha256": "de41d1dbf481cb902fe9c1d244b70343c7691f80d5f889a0b352d3e1c01989e8"
+   },
+   {
+    "file": "gamedata/config/scripts/yan/yan_scientist.ltx",
+    "sha256": "7eeb6cfad6b218004e1fd08db8677948ceb205211620c774a5b6e3d7fca85490"
+   },
+   {
+    "file": "gamedata/config/system.ltx",
+    "sha256": "03b2d129eeb8aadd4364b9be5429f1b901936cf72322baf9684cdf0698e37493"
+   },
+   {
+    "file": "gamedata/config/text/rus/stable_statistic_caption.xml",
+    "sha256": "7a910167eac856cace57ab7a487905a72d35d266211f081589abcff13545e0be"
+   },
+   {
+    "file": "gamedata/config/text/rus/stable_task_manager.xml",
+    "sha256": "2c2bd3e7ab0adface11bb53de9c98ed65b48b07f03f97421e475fce1357ab2b3"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_bz_codes.xml",
+    "sha256": "a57b8ab0a13f9ccbb93705d0c0982eae4c116c6f3c89b16551aabd255f449937"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_bz_notes.xml",
+    "sha256": "ba25b58b55cc5074043d6971029199ed148103f9b92ea3069fbd6f8daa933a6e"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_bz_ps.xml",
+    "sha256": "6486465ceee467b32786e0890fea52dd1fc12683685b1ce2c3750a5360952eae"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_bz_rep.xml",
+    "sha256": "c8c56852df71ce243781ba87244f5289593eb043986377867c66cea4053c8f17"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_bz_surge.xml",
+    "sha256": "a678ece6cba024a3a12a290c1f00d6abca821a7f959ec009d9878802dffb8b00"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_bz_ui.xml",
+    "sha256": "d4960f52ec6a54d229fa0b637a6b610c67ee436b36ebf20498ec423fcdc05240"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_bz_zombies.xml",
+    "sha256": "2269b9bc2dfdd791399ca8b640e25f412f27568c599ce611767c358481ec36a5"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_enc_weapons.xml",
+    "sha256": "1d5bcb38cb00d27478e3e9eedfb655be9b441be6a8acc5d0048211e98cc98d6b"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_includes.xml",
+    "sha256": "315ba849f433c14d9508bc30d978e06d72a9b1925b64e63e3c11e0f0de8c6814"
+   },
+   {
+    "file": "gamedata/config/text/rus/string_table_tasks_unic.xml",
+    "sha256": "9bf072b469f45b96aec698237a159380264c72853fc413445e92e98052f41656"
+   },
+   {
+    "file": "gamedata/config/ui/bz_ps_scene.xml",
+    "sha256": "dbc3203d7634bd3d46a1a31eab75084894485a2a7962c40d65461960cc0fa71d"
+   },
+   {
+    "file": "gamedata/config/ui/bz_ps_scene_16.xml",
+    "sha256": "dbc3203d7634bd3d46a1a31eab75084894485a2a7962c40d65461960cc0fa71d"
+   },
+   {
+    "file": "gamedata/config/ui/bz_ps_wish.xml",
+    "sha256": "6f711da374d8e4dd7b26b287bad4c834b4d761536e7c39141ae7e8fa3b5abde1"
+   },
+   {
+    "file": "gamedata/config/ui/bz_ps_wish_16.xml",
+    "sha256": "4a8a318f158c9823047eae8d0d4d6e5506c268d992e99b5854eb0d98e8df0c71"
+   },
+   {
+    "file": "gamedata/config/ui/bz_zone_lord.xml",
+    "sha256": "04bb8bfe630d64d979f70be044eb21bc926592b4fbcf7a842d0bb60c1e888deb"
+   },
+   {
+    "file": "gamedata/config/ui/bz_zone_lord_16.xml",
+    "sha256": "a47955bc91573f829ddc6b6dbdae5c5264344ca8819528fba0fd83f70c26f673"
+   },
+   {
+    "file": "gamedata/config/ui/ui_mm_opt.xml",
+    "sha256": "2a64ed283ecb923494df11ed4f0cb8e5df6ae5dfe26fb8887823cb9305b7262a"
+   },
+   {
+    "file": "gamedata/config/ui_large/carbody_new.xml",
+    "sha256": "b39b7661d193e6c8d4fecb5a7376dc8b24aa4078300b8e820786c17eff262ac6"
+   },
+   {
+    "file": "gamedata/config/ui_large/carbody_new_16.xml",
+    "sha256": "b39b7661d193e6c8d4fecb5a7376dc8b24aa4078300b8e820786c17eff262ac6"
+   },
+   {
+    "file": "gamedata/config/ui_large/inventory_new.xml",
+    "sha256": "e4d7789e55c4375c1109048bbf641ce4f9f22d764e000e34b4af0958e744c37a"
+   },
+   {
+    "file": "gamedata/config/ui_large/inventory_new_16.xml",
+    "sha256": "e4d7789e55c4375c1109048bbf641ce4f9f22d764e000e34b4af0958e744c37a"
+   },
+   {
+    "file": "gamedata/config/ui_large/trade.xml",
+    "sha256": "78a327f580a1bdcf76d03eb6aaa11ae1316d27c0d2bcde13f97ff14a4f19e31f"
+   },
+   {
+    "file": "gamedata/config/ui_large/trade_16.xml",
+    "sha256": "78a327f580a1bdcf76d03eb6aaa11ae1316d27c0d2bcde13f97ff14a4f19e31f"
+   },
+   {
+    "file": "gamedata/config/ui_large/ui_mm_main.xml",
+    "sha256": "33a39938461ea647544a1e30ddb860f73134568652e00531615f544fdf57f005"
+   },
+   {
+    "file": "gamedata/config/weapons/g43.ltx",
+    "sha256": "bb4b41593ab92127e853a1fffd833686879cfb2b16e1c4d9afed00d2660169fd"
+   },
+   {
+    "file": "gamedata/config/weapons/m240.ltx",
+    "sha256": "75d1b9c27595a3d254d3fff1c560237d9485ae9e7c90c0efb638afacc4728230"
+   },
+   {
+    "file": "gamedata/config/weapons/m60.ltx",
+    "sha256": "9a5855d209e99b86bca6da6ebc8f1417623f3c3c8d11a83f0f941146f39c8dc7"
+   },
+   {
+    "file": "gamedata/config/weapons/mg34.ltx",
+    "sha256": "78c2fc895dbd0240b0cca24f1976322eec6baa0a81f7cf278b3e3e51cb87734c"
+   },
+   {
+    "file": "gamedata/config/weapons/mg42.ltx",
+    "sha256": "40504dbfc7932198d4fcf56dbe332633d8f4ca7947eb3b4778a92d5b3b99366d"
+   },
+   {
+    "file": "gamedata/config/weapons/sr25_mk11_mod0_sk1_ral.ltx",
+    "sha256": "ac96411a00712dc6cd809d2d65755f14bc0c15bb9cc9962e4c9d8de329afe0cf"
+   },
+   {
+    "file": "gamedata/config/weapons/sr3t.ltx",
+    "sha256": "4a2352eac6b69a101280195e786a16d7afcc50a713f50b41caa02f2932762659"
+   },
+   {
+    "file": "gamedata/config/weapons/w_benelli_m3.ltx",
+    "sha256": "772daf2585b11303909d9f48a86bda01459fe628e5aa15f7fd4a334966a1b8b7"
+   },
+   {
+    "file": "gamedata/config/weapons/w_fn_fal_c1.ltx",
+    "sha256": "9cfb5ef137ea657d9197abdba29955390663af7130c78244098656031eacee63"
+   },
+   {
+    "file": "gamedata/config/weapons/w_g36c.ltx",
+    "sha256": "1293b5fb11392522965edb375d25ae1820ea6539d8d7a0230e89efeaecb1a861"
+   },
+   {
+    "file": "gamedata/config/weapons/w_igla.ltx",
+    "sha256": "64a9c230d4dd00b1e9b4a3dba36de0a5802526c5864b4800bdd49bec53b33c7b"
+   },
+   {
+    "file": "gamedata/config/weapons/w_ks23.ltx",
+    "sha256": "e8d165ee51e28af4cff439b16af50664916c1c3b877885a924d73528a3439f50"
+   },
+   {
+    "file": "gamedata/config/weapons/w_m16.ltx",
+    "sha256": "c835cd406abf0fe7ca69b7cf96fbc71d317cda8c809361760474a10c1b194ace"
+   },
+   {
+    "file": "gamedata/config/weapons/w_pkm.ltx",
+    "sha256": "9dc2c3522abf64eee90788948d8b4f55f762eebff0f7cb18ea3f6053e3061a89"
+   },
+   {
+    "file": "gamedata/config/weapons/w_pkm_tactic.ltx",
+    "sha256": "cbdf080fbd6aa0b5cfc4cf8462d7b0313ef7ea827b03cca71b3b3ea7b395789e"
+   },
+   {
+    "file": "gamedata/config/weapons/w_pulemet.ltx",
+    "sha256": "9f1592eece239a51135ad7da8e41db19174355e71f4c5c0039929d392a80663b"
+   },
+   {
+    "file": "gamedata/config/weapons/w_sayga12k.ltx",
+    "sha256": "59c87fb928a4d950daa2ab3821b8817d5779160823f3382380615e053e41130c"
+   },
+   {
+    "file": "gamedata/config/weapons/w_sayga12k_1.ltx",
+    "sha256": "81007479183a0fcc8e509873511c26b2e2d84a1c38353fb33bc5fd551b396894"
+   },
+   {
+    "file": "gamedata/config/weapons/w_svd_c.ltx",
+    "sha256": "c2b23dae06c4555818e273494364676e3505b54320f5f4e8752a375860ce0812"
+   },
+   {
+    "file": "gamedata/config/weapons/w_usas12.ltx",
+    "sha256": "6d428f75e2f8b1d17d2cb19545d6950e4a5b30437576e103e9230d50202fba5c"
+   },
+   {
+    "file": "gamedata/config/weapons/w_vepr12.ltx",
+    "sha256": "8283867864a105af6abab6fbc5d32ea5ba3a12eec253c078e640a0140f8e7edc"
+   },
+   {
+    "file": "gamedata/config/weapons/w_vsk94.ltx",
+    "sha256": "63461e30d80e444b20de60ce630dc14b46df072fb1d16d0d04e143990fe2b802"
+   },
+   {
+    "file": "gamedata/config/weapons/weapons.ltx",
+    "sha256": "1f35391d521c0a5ded65553fceb6f407ce9a0cd078354c4154add32ec532fa83"
+   },
+   {
+    "file": "gamedata/config/weathers/environment.ltx",
+    "sha256": "2743db4f14cdef691c86aba6e3d0e52c80cd75d76e8ea96aca3721e4a986090c"
+   },
+   {
+    "file": "gamedata/config/weathers/weather_bz_ps.ltx",
+    "sha256": "c17a6e8f8044c35713b65506a258bb5eff503550cd1f8ec079bcd3f66dde4c1f"
+   },
+   {
+    "file": "gamedata/levels/l01_escape/level",
+    "sha256": "4fb3b0b6df675730d7bce70b938e4ed4b1250eee9229414d75722f61230ae25e"
+   },
+   {
+    "file": "gamedata/levels/l02_garbage/level",
+    "sha256": "1faf083cd7141a5a513fa8f9d02842d3eb2ac5c97d34c04f231ebf8ee8879d81"
+   },
+   {
+    "file": "gamedata/levels/l03_agroprom/level",
+    "sha256": "ad0fdc9b45b432eb39808d81bbb36b700000b604bba45096f7155945525205fb"
+   },
+   {
+    "file": "gamedata/levels/l04_darkvalley/level",
+    "sha256": "eac1aa1778349f2bffda5850abbb91a7aae3f458061deebe7455db506acb11f3"
+   },
+   {
+    "file": "gamedata/levels/l05_bar/level",
+    "sha256": "4bdfb387101baf0c5e914bb6c93b1661d581524878e4cd50c9fa7a21ff49d74d"
+   },
+   {
+    "file": "gamedata/levels/l07_military/level",
+    "sha256": "6d1dcc74564f6a4b209048d7a5b761b997be9f7f981e4d4e3ab9de99d36f5abd"
+   },
+   {
+    "file": "gamedata/levels/l08_yantar/level",
+    "sha256": "e225be80c989336d12871c7899d2e63530cb3359c1b3fd9e6e336f961a18712b"
+   },
+   {
+    "file": "gamedata/levels/l10_radar/level",
+    "sha256": "de0864364e128a9171e2917e8be1f0306fb09a39b79cbec6ac89bb6689b47c86"
+   },
+   {
+    "file": "gamedata/levels/l11_pripyat/level",
+    "sha256": "8bdf423f75fc590b981324011727b889e4c80ce908aefb304f9eba7473c87b74"
+   },
+   {
+    "file": "gamedata/levels/l12_stancia/level",
+    "sha256": "446ac9b9d39e8bbeaa1033011d281cea6225b977f957450c142a3dcfd40ccbc9"
+   },
+   {
+    "file": "gamedata/levels/l12_stancia_2/level",
+    "sha256": "177041897de921a650a21d64794fe2ca02ee3c5280f228b859302e39e96f3a18"
+   },
+   {
+    "file": "gamedata/meshes/actors/bandit/bandit_plash_rukzak.ogf",
+    "sha256": "09d40a62f156aaed6b17512de09061756daad2a85698eff62c4d667c5d4563eb"
+   },
+   {
+    "file": "gamedata/meshes/weapons/ammo/ammo_9x19_7h21.ogf",
+    "sha256": "d754cef6645af4944ce8a72d3866425f0b19851cdea8490612f7afa7a885a85a"
+   },
+   {
+    "file": "gamedata/meshes/weapons/sayga12k/wpn_sayga12k666.ogf",
+    "sha256": "f45eacf12f1a257a1e6f7d316d0d86e28a5baa7a1197fa62e4133468f4d4ce61"
+   },
+   {
+    "file": "gamedata/meshes/weapons/sayga12k/wpn_sayga12k_hud666.ogf",
+    "sha256": "b1a40b33b9d5ce79bb71a34f16f9991d78098c9591ef7f9b667d275db3346bb7"
+   },
+   {
+    "file": "gamedata/scripts/amkII.script",
+    "sha256": "88d5fd050def8f3c23b4cb686f0c2716cfb25f9505b93744f0bfec94cd1d35bd"
+   },
+   {
+    "file": "gamedata/scripts/amkIIxr_gatherer.script",
+    "sha256": "15de8ebd3c81cbfa39bb24cd59e7ee0e239ce33a2bdd015cfad9e3661c253b1e"
+   },
+   {
+    "file": "gamedata/scripts/amk_offline_alife.script",
+    "sha256": "428ff94edcec63821ee30d24473bf533e846b38324d60052b3a51532f73de48b"
+   },
+   {
+    "file": "gamedata/scripts/bar_dialogs.script",
+    "sha256": "c9a39a84e26cad3184b2a84a06b2a3e272696beac1f18d77f5067a21d7633f80"
+   },
+   {
+    "file": "gamedata/scripts/bind_stalker.script",
+    "sha256": "701306a658445bc1a9a91f5326552d2aa425e6d72dbe32ba81ed4fb42449ea61"
+   },
+   {
+    "file": "gamedata/scripts/bz_codes.script",
+    "sha256": "70cd7a45d73f7fd3d651497289196da1f2ff004aa1d1c1659177effab1cf0665"
+   },
+   {
+    "file": "gamedata/scripts/bz_dialog_exits.script",
+    "sha256": "766ac4cda0f5b0042555cb020269d1acd084752bbd3974985dad1d2ccbe01813"
+   },
+   {
+    "file": "gamedata/scripts/bz_dialogs.script",
+    "sha256": "b99aa0b44926c4a02331701999ebebd67f159294c682fdc68a296a34e9f8008f"
+   },
+   {
+    "file": "gamedata/scripts/bz_escort.script",
+    "sha256": "cea613de9a1086bf2cbd7f8e391e67af1308c45a62b51deb3b8e85b16ad6ddfc"
+   },
+   {
+    "file": "gamedata/scripts/bz_fov.script",
+    "sha256": "134d185bbc9da6e6edd9d6b151130109503b287f7f921dc39c4185f07f623292"
+   },
+   {
+    "file": "gamedata/scripts/bz_lchanger_marks.script",
+    "sha256": "4b4d08a59cead97b2ceecbc78859d8244f64b7da5bd3428789f262af1edca654"
+   },
+   {
+    "file": "gamedata/scripts/bz_main_quest.script",
+    "sha256": "a1a1ec615c037fe846d04b2cf11c7425894dba351cdb6d3163dc1df18931656b"
+   },
+   {
+    "file": "gamedata/scripts/bz_notes.script",
+    "sha256": "c39884f1241579c360c038b28683cc6d4eb004898be8eff11ffbcdf92f6a7e63"
+   },
+   {
+    "file": "gamedata/scripts/bz_path_guard.script",
+    "sha256": "9a92fa1ed9ca26c12c3df37e5277d951f56089bbac7dde0bc0157d16f8f8f389"
+   },
+   {
+    "file": "gamedata/scripts/bz_pda_fix.script",
+    "sha256": "75dd2bd044c6365011e069a316c0c7bd991b001edf88edbf588617ed9ac0e28e"
+   },
+   {
+    "file": "gamedata/scripts/bz_pda_marks.script",
+    "sha256": "d53a423d590bd2cb626a76d3a9cfc3999a65152e2e0e598d191dbe2dad26ea6e"
+   },
+   {
+    "file": "gamedata/scripts/bz_profiler.script",
+    "sha256": "69b1223cca859fae6b0717c80ef88f565ec6a90837110c3e15f22b424aa0b42e"
+   },
+   {
+    "file": "gamedata/scripts/bz_ps_scene.script",
+    "sha256": "1ce0119143fff75dd5d4fadb2b40e796e586a285ff29a162893d2e2e29bf2d4e"
+   },
+   {
+    "file": "gamedata/scripts/bz_quest_guard.script",
+    "sha256": "2511fc4e8e5d4a284fbf94f953a62d328223c8c193195c6d3b5cadbaaa41112e"
+   },
+   {
+    "file": "gamedata/scripts/bz_quest_rescue.script",
+    "sha256": "b5fa978e151920b7beaf4f187facacbab0b9be0f49c9e3a440df680dc7e83cdd"
+   },
+   {
+    "file": "gamedata/scripts/bz_rep.script",
+    "sha256": "25f84f49b7c67f41233f148d87809c1f655d9939ac645e60661e165cd7405ad1"
+   },
+   {
+    "file": "gamedata/scripts/bz_sisiy_escape.script",
+    "sha256": "340cb96e7f839a84ec70268412cc53e1dcef5fa92560acbf09ba1fbbfe976a9f"
+   },
+   {
+    "file": "gamedata/scripts/bz_slots.script",
+    "sha256": "681941d8a1402c6ce236149054f23dd583854afe89eefd83a32633032b082e45"
+   },
+   {
+    "file": "gamedata/scripts/bz_surge_task.script",
+    "sha256": "26acace50d971fcd5721e6d34c9c64037fd3b72353bfa49bb60fd4d7af717cc1"
+   },
+   {
+    "file": "gamedata/scripts/bz_task_nav.script",
+    "sha256": "579204661129630e40b79872f6510dc16be73bfb88b630883a4026df02614db9"
+   },
+   {
+    "file": "gamedata/scripts/bz_time.script",
+    "sha256": "6c267db24156198dd08381796afe96177631cdf6296eedb1176c8e7de00373a6"
+   },
+   {
+    "file": "gamedata/scripts/bz_visual_fix.script",
+    "sha256": "59c45c8696f9f10306e3b41339013357c1cb6577840b83cb03f7263ee515aea1"
+   },
+   {
+    "file": "gamedata/scripts/bz_zombies.script",
+    "sha256": "32dfb0b7e6b977d813beab9fe29efc086417b89107d5a48eeba4595bd2155881"
+   },
+   {
+    "file": "gamedata/scripts/bz_zone_lord.script",
+    "sha256": "05765fdc40baffe5386e101fb74cf54dceabfa670e6436418c5f3a3d445912ca"
+   },
+   {
+    "file": "gamedata/scripts/death_manager.script",
+    "sha256": "e278b21dd3459dd2b6be48a86de1803523c20322aef242d82481b51b75ac23b3"
+   },
+   {
+    "file": "gamedata/scripts/gulag_escape.script",
+    "sha256": "344195c1f764c1b9ef047a60ca2be9152a3757319dc10434acac050523b9e26a"
+   },
+   {
+    "file": "gamedata/scripts/level_weathers.script",
+    "sha256": "23f6e026e39b5764eb182c3f7e765486dbd61e4b62cf7d7349692a9a068958c0"
+   },
+   {
+    "file": "gamedata/scripts/lootmoney.script",
+    "sha256": "0b1c01afc20b4adb37c6d941cf68b37ba62afc1a142d7d4955bf87fd7751f05a"
+   },
+   {
+    "file": "gamedata/scripts/max_dialog.script",
+    "sha256": "d5cf7409f7f12777fa8c70a4b6fa206eda816a2ad80555696f66efbf31ff8a95"
+   },
+   {
+    "file": "gamedata/scripts/mob_death.script",
+    "sha256": "a825e2e4a73634e944ec9f58592bfee8083c4f929afaddb8ebac7bec2746338e"
+   },
+   {
+    "file": "gamedata/scripts/move_mgr.script",
+    "sha256": "147860ea2419fa359346b2f48799bb955877a73112a28eefcfa7488a5f4db8f1"
+   },
+   {
+    "file": "gamedata/scripts/news_manager.script",
+    "sha256": "921f9e3511af1bbd68523340ff72fbae23f122941b065e5a8e439a12e2be075c"
+   },
+   {
+    "file": "gamedata/scripts/ogsm_funcs.script",
+    "sha256": "266e5433f6b1fe777d1ade70dc7a4b90e1c6c7044f624c63eaca3ada1a93f297"
+   },
+   {
+    "file": "gamedata/scripts/ogsm_hideout.script",
+    "sha256": "757af9731c4b3c2388d4e769e51e63d1eef430b9c89c15dc279c547b312a7869"
+   },
+   {
+    "file": "gamedata/scripts/ogsm_repair.script",
+    "sha256": "47d9fc9217bdbba8651f8453bf80ffce2f7ea413ea7cc6e264e5f94114e6ce10"
+   },
+   {
+    "file": "gamedata/scripts/ogsm_respawn.script",
+    "sha256": "471b55fdcba8bd1791a04af1f9fbd12cbe60188c33adcc29d27f0a254cd937a9"
+   },
+   {
+    "file": "gamedata/scripts/ogsm_surge.script",
+    "sha256": "c6e9582d29f2bb661bb1264c2dfaf1c0eb88bf91ba493e8775f9f74ef0689fd9"
+   },
+   {
+    "file": "gamedata/scripts/ph_car.script",
+    "sha256": "e0075f1e842faa1f8afcd9e6f81b4d8c2ddf01f64ea86ab3e3c6ac2080673ff1"
+   },
+   {
+    "file": "gamedata/scripts/plot_dialogs.script",
+    "sha256": "5660027d46cdc5f835f14b97ae5a3db663310e3e92111e2678e6d985ab1bfe9b"
+   },
+   {
+    "file": "gamedata/scripts/protected_items.script",
+    "sha256": "7e30daccf2bf2bb70e9dcba356be523e6793052235729f16eed0387c2ad8a592"
+   },
+   {
+    "file": "gamedata/scripts/rx_gl.script",
+    "sha256": "825fa51df47688dc68633d1838c2cd10c947d5acca91daf63219bc13967425db"
+   },
+   {
+    "file": "gamedata/scripts/sak_off_corpses.script",
+    "sha256": "8e8d02ed85383cb3280f3831959424f7c9cdf0618c102e99de11245afe4f74e4"
+   },
+   {
+    "file": "gamedata/scripts/se_respawn.script",
+    "sha256": "ba47eb5cc6b6153eecb52258fba85d1197d464a8629963606a210c75ce904ec9"
+   },
+   {
+    "file": "gamedata/scripts/se_stalker.script",
+    "sha256": "7348d62b77550a74b36144bbe13a8a6fbd57b0586203f5d1a54ac19d8b2e16e7"
+   },
+   {
+    "file": "gamedata/scripts/smart_terrain.script",
+    "sha256": "52d4b0678168580912976f46490d83ece2594f3174a787c316e1ef7cce2cb392"
+   },
+   {
+    "file": "gamedata/scripts/sound_theme.script",
+    "sha256": "de172c578fa646f29fd4424002df9e26451f9c4be92c18ba246b55f0426c9394"
+   },
+   {
+    "file": "gamedata/scripts/sr_territory.script",
+    "sha256": "5da9adb26679cfdaa149602b03b4e4cc201051ede444cff5f15fbda72f905ac0"
+   },
+   {
+    "file": "gamedata/scripts/task_manager.script",
+    "sha256": "71c52e0e16e0caf53e93cf1d9dff83c2a10c33509798fc33227360c7debedf52"
+   },
+   {
+    "file": "gamedata/scripts/trade_manager.script",
+    "sha256": "9ad23159cdf7d7342867f000b464f6514182ec1819757d3a66ac9fdd15fae74e"
+   },
+   {
+    "file": "gamedata/scripts/treasure_manager.script",
+    "sha256": "0a20c40138735e838fd646bd457c29364253769e2a079c72c066e9437e57f1a8"
+   },
+   {
+    "file": "gamedata/scripts/ui_mm_opt_video_adv.script",
+    "sha256": "528510ff027c4115ca7a6a29a15b50168fcaa24b4700b8d5e500f037b254920d"
+   },
+   {
+    "file": "gamedata/scripts/utils.script",
+    "sha256": "5baca25705a4d96349a3170037d41d89c993ac230a4a21945b35dce6ea94bf82"
+   },
+   {
+    "file": "gamedata/scripts/xr_camper.script",
+    "sha256": "2d782101a0ba6a136e0ec1d9a40fe83b08d2bfe20f794c77302becc231a05ff1"
+   },
+   {
+    "file": "gamedata/scripts/xr_conditions.script",
+    "sha256": "2fefa4b8165f7670b88b763956baeba38f4642552b500ff3faac84f5cf52d420"
+   },
+   {
+    "file": "gamedata/scripts/xr_effects.script",
+    "sha256": "946f07da094053c267c799b64307cad7fb9c8be2c2cc1bc034b4269a63ade75d"
+   },
+   {
+    "file": "gamedata/scripts/xr_kamp.script",
+    "sha256": "e5529247742a8b039e13b97fbb65a21b71c99e2acd8efe25d6ba5e50578abe55"
+   },
+   {
+    "file": "gamedata/scripts/xr_logic.script",
+    "sha256": "daa431b1c20efc1923b9bff95bed2ec11b338d2ea3b356038914376ec7636a66"
+   },
+   {
+    "file": "gamedata/scripts/xr_motivator.script",
+    "sha256": "a2c9face551c554a3a89e1731944e09b33b667c83372449cb161ad35fdccc2e1"
+   },
+   {
+    "file": "gamedata/scripts/xr_remark.script",
+    "sha256": "3a8655f9dcd1a85f1d9d4a5797dbb75292404baa2bc8df92c81e1017e1824667"
+   },
+   {
+    "file": "gamedata/scripts/xr_sound.script",
+    "sha256": "bdda4d09116497dfbb15e84f84188f6a1f75dd6b86f2e07a74536064bdbd6fc9"
+   },
+   {
+    "file": "gamedata/scripts/xr_statistic.script",
+    "sha256": "5bb0e3e1bbeee5016705f24f9367b8016e0e2aea52b268c2e480c5624fc999ad"
+   },
+   {
+    "file": "gamedata/sounds/Aaz/svd_c/svd-c_draw.ogg",
+    "sha256": "a44314a61662fd22153fc8ae7ffe46458d4a26c9a808568c39f5f5feb2f850fb"
+   },
+   {
+    "file": "gamedata/sounds/Aaz/svd_c/svd-c_empty.ogg",
+    "sha256": "9f4f33a01571b4c38288edd176dc12f82e9a37fc3c03db80533e66c63aad081e"
+   },
+   {
+    "file": "gamedata/sounds/Aaz/svd_c/svd-c_holster.ogg",
+    "sha256": "4e5215083d1c9af3b1b47180e310c19492f52986d5ea904eefb954095b535f4e"
+   },
+   {
+    "file": "gamedata/sounds/Aaz/svd_c/svd-c_reload.ogg",
+    "sha256": "b608c36f79a45525776dd58fede202e814f2d2337ead68643947b8e58c83a262"
+   },
+   {
+    "file": "gamedata/sounds/Aaz/svd_c/svd-c_shot.ogg",
+    "sha256": "1f0d4813599457c144a22d70c7e591f44ad5b7b136c4be969d0bec823c2b6d9f"
+   },
+   {
+    "file": "gamedata/sounds/music/bz_ps_oiia.ogg",
+    "sha256": "c967a076158304d0886e92c878f10ead7912c6a1f93782cb656e2ed31513acbd"
+   },
+   {
+    "file": "gamedata/sounds/weapons/sayga12k/sayga12k_draw.ogg",
+    "sha256": "a44314a61662fd22153fc8ae7ffe46458d4a26c9a808568c39f5f5feb2f850fb"
+   },
+   {
+    "file": "gamedata/sounds/weapons/sayga12k/sayga12k_empty.ogg",
+    "sha256": "9f4f33a01571b4c38288edd176dc12f82e9a37fc3c03db80533e66c63aad081e"
+   },
+   {
+    "file": "gamedata/sounds/weapons/sayga12k/sayga12k_holster.ogg",
+    "sha256": "4e5215083d1c9af3b1b47180e310c19492f52986d5ea904eefb954095b535f4e"
+   },
+   {
+    "file": "gamedata/sounds/weapons/sayga12k/sayga12k_reload.ogg",
+    "sha256": "8530f0579b5a3a10ff6d39900869768d845708723e8fd899933e07f00a3c0c78"
+   },
+   {
+    "file": "gamedata/sounds/weapons/sayga12k/sayga12k_shot.ogg",
+    "sha256": "791ae08c7951bda6e888fdc96b8acea1faaf82ad51ea497ea09bca424453768c"
+   },
+   {
+    "file": "gamedata/textures/ui/bz_ps_sidor.dds",
+    "sha256": "6301aa479627fdcb52f782bcce2517fec5bdb918d39c9dd48fda3136684be67e"
+   },
+   {
+    "file": "gamedata/textures/ui/bz_ps_sidor_spin.dds",
+    "sha256": "11e78d20e2d9962458ad2d0b991de3539092d9a7648e27882dd045d21ee05a41"
+   },
+   {
+    "file": "gamedata/textures/ui/bz_ps_white.dds",
+    "sha256": "3a5e8878f204a3bdf27c5a1407b3a5f4d608176f2da7f58068fbe804fc3fff40"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_18r_1024.dds",
+    "sha256": "8cd0b71490b44682c12bddb6a592e68abca3c85c994b5356b33a14b8afb74855"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_18r_1024.ini",
+    "sha256": "d1267138f95a489b71c8e39f1547636f7a26156a4d402a5ca48892a816de58b5"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_18r_1600.dds",
+    "sha256": "478b764c9fba677de309731839fbe808d130826f3ef1e069a09621bec71029e9"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_18r_1600.ini",
+    "sha256": "7290bf90f88dd4d820b0eea24ef2a0dc08b78f2618a28a956a3bf4c30305a70b"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_18r_800.dds",
+    "sha256": "7a57d46d56a99fad3f14ee15d105c16f60b65dc2aa475de20bd96fd26ab201ff"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_18r_800.ini",
+    "sha256": "59969d15416aaa8e4d2f6f591b3e798b10f1f7116a552ac9ab8b873d4d017ee2"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_25r_1024.dds",
+    "sha256": "4b56a625f22999d21c4ff1ed206202c0fea54217369342d2ff24a2342ac80770"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_25r_1024.ini",
+    "sha256": "de9895459511326568b3e0d45dc32268fb74d2bb197da0faefa144184e6bfda9"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_25r_1600.dds",
+    "sha256": "a22101948f3b7939120bddcd71d3152a378d0c3b5d30984179503433ab30510d"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_25r_1600.ini",
+    "sha256": "4c45a6c3d26c3c0feb6ba6d48f67e7cd03d0899190d873498d801473fdb80856"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_25r_800.dds",
+    "sha256": "ee315afe32f1f6d2f774be0df0f0158b756a101f6d990ff0309a7ff68b03d307"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_font_letter_25r_800.ini",
+    "sha256": "87505637e86c525bb1a16d93b7b4483b046f549fd33ae77e100f673e7c09bbcb"
+   },
+   {
+    "file": "gamedata/textures/ui/ui_icon_equipment.dds",
+    "sha256": "b2fd604e50b5e146ccb43a467b88781320357f3dcbbfbe5fb38499c0ab0785e4"
+   },
+   {
+    "file": "gamedata/textures/wpn/sayga/wpn_kolim.dds",
+    "sha256": "6e98647d9c2d8368a6a4ae34a5bd01c0977a5b227ba0eed32d7838e51da5965a"
+   },
+   {
+    "file": "gamedata/textures/wpn/sayga/wpn_lens.dds",
+    "sha256": "779c60db370bddf415bc72344e6889b103eae9342c112869eb7864969a09343f"
+   },
+   {
+    "file": "gamedata/textures/wpn/sayga/wpn_mag.dds",
+    "sha256": "da5bf39753b14c8357900612163a4f24038e80e024748f75beb79e04b263da01"
+   },
+   {
+    "file": "gamedata/textures/wpn/sayga/wpn_sayga12k.dds",
+    "sha256": "01a2cd3ad90bc356eb737dc7dd5550ed03150859cdc97c8933d3c13eef929c20"
+   },
+   {
+    "file": "gamedata/textures/wpn/sayga/wpn_sayga12kp.dds",
+    "sha256": "c1ce6936a93c943d5510c98447b32f9dfc66063672d9c9bac775bb6979f7039d"
+   }
+  ]
+ },
+ {
   "version": "2026.10.28.3",
   "title": "ReFix 28.10.2026 (3) — штурм завода «Юпитер», контролёр на пароходе",
   "patchHash": "a2a5814e0fc9f2119d23158e54010f8036cdaff3359847ace54c312c587f3c19",
