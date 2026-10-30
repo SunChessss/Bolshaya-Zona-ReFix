@@ -2,7 +2,7 @@
  {
   "version": "2026.10.30.1",
   "title": "ReFix 30.10.2026 — служебные правки скриптов",
-  "patchHash": "b7d3747845d3c84f9996a30ad22a49c21c781c8a61dc6be795ab9becb43261dc",
+  "patchHash": "9d2985a6ca1644d5d232695e37784960c57d5f2496a168eb7b14e05aa000fec6",
   "files": [
    {
     "file": "bin/xrGame.dll",
@@ -334,7 +334,7 @@
    },
    {
     "file": "gamedata/config/scripts/sar_monolith.ltx",
-    "sha256": "de41d1dbf481cb902fe9c1d244b70343c7691f80d5f889a0b352d3e1c01989e8"
+    "sha256": "3883346d34b2a47819902b7a83ae461a800147077cb2ac645f972bc7cd171446"
    },
    {
     "file": "gamedata/config/scripts/yan/yan_scientist.ltx",

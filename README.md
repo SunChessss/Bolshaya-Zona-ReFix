@@ -179,7 +179,7 @@ python package.py --release-dir C:\path\to\release --version 2026.10.14.4 --tag 
 
 ### 2026.10.30.1 — служебные правки скриптов
 
-`package.py --version 2026.10.30.1 --tag v2026.10.30.1 --notes-file artifacts/notes-2026.10.30.1.txt --addons-from v2026.10.29.1 --launcher-from v2026.10.29.1` (лаунчер 1.10.0 без изменений). Fixes (`stabilization/tools/package_stage58.py`, 1 файл) — служебные правки скриптов. Fixes sha256 `b7d3747845d3c84f9996a30ad22a49c21c781c8a61dc6be795ab9becb43261dc`.
+`package.py --version 2026.10.30.1 --tag v2026.10.30.1 --notes-file artifacts/notes-2026.10.30.1.txt --addons-from v2026.10.29.1 --launcher-from v2026.10.29.1` (лаунчер 1.10.0 без изменений). Fixes (`stabilization/tools/package_stage58.py`, 2 файла) — служебные правки скриптов. Fixes sha256 `9d2985a6ca1644d5d232695e37784960c57d5f2496a168eb7b14e05aa000fec6`.
 
 ### 2026.10.29.1 — выброс с укрытием, коды от дверей в КПК, «Повелитель Зоны», Лабиринт
 
